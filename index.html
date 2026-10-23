@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Les créations d'Amélien</title>
+  <meta name="description" content="J'ai toujours de nouvelles idées, du coup je commence à les rassembler.">
+  <meta name="theme-color" content="#0d0c0a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    /* ════════════════════════════════════════════════════════════════
+       LES CRÉATIONS D'AMÉLIEN
+       Comme le manuel d'un jeu qui n'a jamais existé : papier sombre,
+       images basse définition tramées, une page par création.
+       ════════════════════════════════════════════════════════════════ */
+    :root { --nuit: #0d0c0a; --os: #e6dcc2; --cendre: #9a8f78; --trait: rgba(230,220,194,.22); --rouille: #c8572f; }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--os);
+      background: url(img/grain.png), radial-gradient(120% 80% at 50% 0%, #1d1a15, var(--nuit) 70%);
+      background-color: var(--nuit); background-attachment: fixed;
+      font: 19px/1.45 "EB Garamond", Georgia, serif; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    main { max-width: 1160px; margin: 0 auto; padding: max(30px, env(safe-area-inset-top)) clamp(16px, 4vw, 40px) 50px; }
+
+    .tete { text-align: center; padding: clamp(30px, 7vw, 80px) 0 clamp(26px, 5vw, 52px); }
+    .etiquette { font: 500 12px/1 "IBM Plex Mono", monospace; letter-spacing: .22em; text-transform: uppercase; color: var(--cendre); }
+    h1 { margin: 16px 0 0; font: 600 clamp(3rem, 9.5vw, 7.4rem)/.92 "Cormorant Garamond", Georgia, serif; letter-spacing: -0.02em; text-shadow: 0 0 40px rgba(217,162,87,.18); }
+    .sous { margin: 22px auto 0; max-width: 40ch; font-style: italic; font-size: clamp(18px, 2vw, 22px); color: var(--cendre); }
+    .filet { display: flex; align-items: center; gap: 14px; margin: clamp(28px, 4vw, 44px) auto 0; max-width: 520px; color: var(--cendre); }
+    .filet::before, .filet::after { content: ""; flex: 1; height: 3px; border-top: 1px solid var(--trait); border-bottom: 1px solid var(--trait); }
+    .filet span { width: 7px; height: 7px; transform: rotate(45deg); background: var(--rouille); }
+
+    .pages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(18px, 2.6vw, 34px); margin: 0; padding: 0; list-style: none; }
+    .page { position: relative; display: grid; grid-template-rows: auto 1fr; height: 100%; text-decoration: none; }
+    .cadre { position: relative; padding: 7px; border: 1px solid var(--trait); background: rgba(0,0,0,.35); }
+    .cadre::after { content: ""; position: absolute; inset: 7px; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px); mix-blend-mode: multiply; }
+    .cadre img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; image-rendering: pixelated; filter: brightness(.86) saturate(.9); transition: filter .35s, transform .6s cubic-bezier(.2,.8,.2,1); }
+    .numero-inutile { position: absolute; z-index: 1; left: 15px; top: 13px; font: 500 12px/1 "IBM Plex Mono", monospace; letter-spacing: .14em; color: var(--os); text-shadow: 0 1px 0 #000; }
+    .texte { display: grid; align-content: start; gap: 4px; padding: 14px 4px 0; }
+    .titre { margin: 0; font-weight: 600; font-size: clamp(1.3rem, 1.9vw, 1.55rem); line-height: 1.1; }
+    @media (max-width: 560px) { .titre { min-height: 0; } }
+    .legende { margin: 0; font-style: italic; color: var(--cendre); }
+    a.page .cadre { transition: border-color .3s; }
+    a.page:hover .cadre, a.page:focus-visible .cadre { border-color: rgba(230,220,194,.6); }
+    a.page:hover img, a.page:focus-visible img { filter: brightness(1.06) saturate(1.1); transform: scale(1.025); }
+    a.page:focus-visible { outline: none; }
+    a.page .titre::after { content: " →"; font-family: "IBM Plex Mono", monospace; font-size: .6em; vertical-align: .22em; color: var(--rouille); opacity: 0; transition: opacity .3s; }
+    a.page:hover .titre::after, a.page:focus-visible .titre::after { opacity: 1; }
+    .cadre { overflow: hidden; }
+    .bientot img { filter: brightness(.6) saturate(.5) contrast(.95); }
+    .bientot .legende { color: var(--rouille); font-style: normal; font-family: "IBM Plex Mono", monospace; font-size: 14px; letter-spacing: .04em; }
+
+    footer { margin-top: clamp(40px, 6vw, 70px); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding-top: 16px; border-top: 1px solid var(--trait); font: 500 12px/1.4 "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--cendre); }
+    footer a { text-decoration: none; } footer a:hover { color: var(--os); }
+
+    @media (max-width: 900px) { .pages { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .pages { grid-template-columns: minmax(0, 1fr); } body { font-size: 18px; } }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="tete">
+      <p class="etiquette">OSB Corporation présente :</p>
+      <h1>Les créations d'Amélien</h1>
+      <p class="sous">J'ai toujours de nouvelles idées,<br>du coup je commence à les rassembler.</p>
+      <div class="filet" aria-hidden="true"><span></span></div>
+    </header>
+
+    <ul class="pages">
+      <li><a class="page" href="https://www.onsenbranle.fr">
+        <div class="cadre"><img src="img/onsenbranle.png" alt="Une porte de lumière au fond d'une salle sombre"></div>
+        <div class="texte"><p class="titre">Onsenbranle.fr</p><p class="legende">Le point de départ</p></div>
+      </a></li>
+      <li><a class="page" href="https://amelienito.github.io/music-discovery/">
+        <div class="cadre"><img src="img/music-discovery.png" alt="Un disque irisé qui flotte au-dessus d'une plaine, la nuit"></div>
+        <div class="texte"><p class="titre">Music Discovery</p><p class="legende">Pour découvrir de la musique</p></div>
+      </a></li>
+      <li><a class="page" href="https://amelienito.github.io/cite-trois-chinois/">
+        <div class="cadre"><img src="img/cite-3-chinois.png" alt="Un globe dans la nuit, trois lumières à sa surface"></div>
+        <div class="texte"><p class="titre">Cite 3 Chinois</p><p class="legende">Juste pour voir</p></div>
+      </a></li>
+      <li><div class="page bientot">
+        <div class="cadre"><img src="img/flechettes.png" alt="Un point d'interrogation de pierre en lévitation"></div>
+        <div class="texte"><p class="titre">Raciste ou joueur de fléchettes&nbsp;?</p><p class="legende">(en travaux)</p></div>
+      </div></li>
+      <li><div class="page bientot">
+        <div class="cadre"><img src="img/quiz.png" alt="Un point d'interrogation de pierre en lévitation"></div>
+        <div class="texte"><p class="titre">Un quiz de fun facts</p><p class="legende">Disponible quand c'est dispo</p></div>
+      </div></li>
+      <li><div class="page bientot">
+        <div class="cadre"><img src="img/a-venir.png" alt="Une lumière au bout d'un chemin, dans la brume"></div>
+        <div class="texte"><p class="titre">D'autres créations arrivent</p><p class="legende">…</p></div>
+      </div></li>
+    </ul>
+
+    <footer><span>Amélien, 2026</span><a href="https://www.onsenbranle.fr">onsenbranle.fr</a></footer>
+  </main>
+</body>
+</html>
