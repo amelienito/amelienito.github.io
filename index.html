@@ -28,7 +28,9 @@
     main { max-width: 1160px; margin: 0 auto; padding: max(30px, env(safe-area-inset-top)) clamp(16px, 4vw, 40px) 50px; }
 
     .tete { text-align: center; padding: clamp(30px, 7vw, 80px) 0 clamp(26px, 5vw, 52px); }
-    .etiquette { font: 500 12px/1 "IBM Plex Mono", monospace; letter-spacing: .22em; text-transform: uppercase; color: var(--cendre); }
+    .etiquette { margin: 0; display: grid; justify-items: center; gap: 10px; color: var(--os); }
+    .etiquette b { font: 700 clamp(2.6rem, 9.5vw, 6.4rem)/.95 "Cormorant Garamond", Georgia, serif; letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 0 46px rgba(217,162,87,.38), 0 2px 0 #000; }
+    .etiquette span { font: 600 clamp(.8rem, 2.2vw, 1.15rem)/1 "IBM Plex Mono", monospace; letter-spacing: .5em; text-transform: uppercase; color: var(--rouille); padding-left: .5em; }
     .cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     h1 { margin: 18px auto 0; max-width: 18ch; font: 600 clamp(2.2rem, 5.6vw, 4.6rem)/1.02 "Cormorant Garamond", Georgia, serif; letter-spacing: -0.015em; text-shadow: 0 0 40px rgba(217,162,87,.18); }
     .sous { margin: 22px auto 0; max-width: 40ch; font-style: italic; font-size: clamp(18px, 2vw, 22px); color: var(--cendre); }
@@ -67,7 +69,7 @@
 <body>
   <main>
     <header class="tete">
-      <p class="etiquette">OSB Corporation présente :</p>
+      <p class="etiquette"><b>OSB Corporation</b><span>présente :</span></p>
       <h1 class="cache">Les créations d'Amélien</h1>
       <div class="filet" aria-hidden="true"><span></span></div>
     </header>
