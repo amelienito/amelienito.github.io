@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Les créations d'Amélien</title>
-  <meta name="description" content="Les créations d'Amélien : Onsenbranle, Music Discovery, Cite 3 Chinois.">
+  <meta name="description" content="OSB Corporation présente : les créations d'Amélien. Onsenbranle, Music Discovery, Cite 3 Chinois, RP Talya, Fun facts.">
   <meta name="theme-color" content="#0d0c0a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,41 +12,96 @@
   <style>
     /* ════════════════════════════════════════════════════════════════
        LES CRÉATIONS D'AMÉLIEN
-       Comme le manuel d'un jeu qui n'a jamais existé : papier sombre,
-       images basse définition tramées, une page par création.
+       Un chemin dans la brume : chaque création est un objet sur un
+       socle. La vue en liste garde le manuel d'un jeu qui n'a jamais
+       existé.
        ════════════════════════════════════════════════════════════════ */
-    :root { --nuit: #0d0c0a; --os: #e6dcc2; --cendre: #9a8f78; --trait: rgba(230,220,194,.22); --rouille: #c8572f; }
+    :root { --nuit: #0d0c0a; --os: #e6dcc2; --cendre: #9a8f78; --trait: rgba(230,220,194,.22); --rouille: #c8572f; --accent: #e6dcc2; }
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     html { -webkit-text-size-adjust: 100%; }
-    body {
-      margin: 0; min-height: 100vh; color: var(--os);
-      background: url(img/grain.png), radial-gradient(120% 80% at 50% 0%, #1d1a15, var(--nuit) 70%);
-      background-color: var(--nuit); background-attachment: fixed;
-      font: 19px/1.45 "EB Garamond", Georgia, serif; -webkit-font-smoothing: antialiased;
-    }
+    body { margin: 0; min-height: 100vh; color: var(--os); background: var(--nuit); font: 19px/1.45 "EB Garamond", Georgia, serif; -webkit-font-smoothing: antialiased; }
     a { color: inherit; }
-    main { max-width: 1160px; margin: 0 auto; padding: max(30px, env(safe-area-inset-top)) clamp(16px, 4vw, 40px) 50px; }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+    :focus-visible { outline: 2px solid var(--os); outline-offset: 3px; }
+    .mono { font: 500 12px/1.3 "IBM Plex Mono", monospace; letter-spacing: .14em; text-transform: uppercase; }
 
+    /* ─────────── le parcours ─────────── */
+    body.parcours { overflow: hidden; height: 100svh; }
+    #toile { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; touch-action: none; }
+    body.liste #toile, body.liste .hud { display: none; }
+    .hud { position: fixed; inset: 0; pointer-events: none; }
+    .hud > * { pointer-events: auto; }
+
+    .marque { position: fixed; left: clamp(16px, 3vw, 34px); top: max(16px, env(safe-area-inset-top)); display: grid; gap: 4px; text-decoration: none; opacity: 0; transition: opacity .6s; }
+    .marque b { font: 700 18px/1 "Inter Tight", Helvetica, Arial, sans-serif; letter-spacing: -.01em; text-transform: uppercase; color: #cdc9c0; }
+    .marque span { color: var(--cendre); }
+    body.en-route .marque { opacity: 1; }
+
+    .outils { position: fixed; right: clamp(16px, 3vw, 34px); top: max(16px, env(safe-area-inset-top)); display: flex; gap: 8px; }
+    .outil { padding: 9px 12px; border: 1px solid var(--trait); background: rgba(13,12,10,.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: var(--os); }
+    .outil:hover { border-color: rgba(230,220,194,.6); }
+    .outil[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+    .titre-grand { position: fixed; left: 0; right: 0; top: 18vh; text-align: center; padding: 0 16px; transition: opacity .7s, transform .9s cubic-bezier(.2,.8,.2,1); }
+    .titre-grand b { display: block; font: 700 clamp(2.6rem, 10vw, 7.4rem)/.9 "Inter Tight", Helvetica, Arial, sans-serif; letter-spacing: -.025em; text-transform: uppercase; color: #cdc9c0; text-shadow: 0 0 60px rgba(0,0,0,.8); }
+    .titre-grand span { display: block; margin-top: 14px; font: 500 clamp(.8rem, 2vw, 1.05rem)/1 "IBM Plex Mono", monospace; letter-spacing: .4em; text-transform: uppercase; color: var(--cendre); padding-left: .4em; }
+    .titre-grand h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    body.en-route .titre-grand { opacity: 0; transform: translateY(-40px); pointer-events: none; }
+    .avancer { position: fixed; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: grid; justify-items: center; gap: 10px; color: var(--cendre); transition: opacity .5s; }
+    .avancer i { width: 1px; height: 38px; background: linear-gradient(var(--cendre), transparent); animation: tombe 2.2s ease-in-out infinite; }
+    @keyframes tombe { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+    body.en-route .avancer { opacity: 0; pointer-events: none; }
+
+    .fiche { position: fixed; left: clamp(16px, 4vw, 56px); bottom: max(26px, calc(env(safe-area-inset-bottom) + 14px)); max-width: min(520px, calc(100vw - 32px)); display: grid; gap: 6px; opacity: 0; transform: translateY(14px); transition: opacity .45s, transform .55s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+    .fiche.visible { opacity: 1; transform: none; pointer-events: auto; }
+    .fiche .num { color: var(--accent); }
+    .fiche h2 { margin: 0; font: 600 clamp(2.2rem, 5.4vw, 4.2rem)/1 "Cormorant Garamond", Georgia, serif; letter-spacing: -.015em; text-shadow: 0 2px 30px rgba(0,0,0,.9); }
+    .fiche p { margin: 0; font-style: italic; font-size: clamp(18px, 2vw, 22px); color: var(--os); opacity: .82; text-shadow: 0 1px 14px rgba(0,0,0,.9); }
+    .entrer { justify-self: start; margin-top: 12px; display: inline-flex; align-items: center; gap: 12px; padding: 13px 20px; border: 1px solid var(--accent); background: rgba(13,12,10,.6); color: var(--os); text-decoration: none; }
+    .entrer::after { content: "→"; font-family: "IBM Plex Mono", monospace; color: var(--accent); transition: transform .25s; }
+    .entrer:hover::after { transform: translateX(5px); }
+    .entrer.ferme { border-style: dashed; color: var(--cendre); cursor: default; }
+    .entrer.ferme::after { content: ""; }
+
+    .sommaire { position: fixed; right: clamp(16px, 3vw, 34px); top: 50%; transform: translateY(-50%); display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; text-align: right; }
+    .sommaire button { padding: 6px 0 6px 18px; color: var(--cendre); display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+    .sommaire button::after { content: ""; width: 14px; height: 1px; background: currentColor; transition: width .3s; }
+    .sommaire button[aria-current="true"] { color: var(--os); }
+    .sommaire button[aria-current="true"]::after { width: 34px; background: var(--accent); }
+    .sommaire span { opacity: 0; transform: translateX(6px); transition: opacity .3s, transform .3s; }
+    .sommaire:hover span, .sommaire button[aria-current="true"] span, .sommaire button:focus-visible span { opacity: 1; transform: none; }
+    .fleches { position: fixed; right: clamp(16px, 3vw, 34px); bottom: max(26px, calc(env(safe-area-inset-bottom) + 14px)); display: flex; gap: 8px; }
+    .fleches .outil { width: 46px; height: 46px; padding: 0; display: grid; place-items: center; font: 500 18px/1 "IBM Plex Mono", monospace; }
+
+    @media (max-width: 720px) {
+      .sommaire { display: none; }
+      .fiche { right: 16px; bottom: max(84px, calc(env(safe-area-inset-bottom) + 76px)); }
+      .fleches { left: 16px; right: 16px; justify-content: space-between; }
+      .fleches .outil { width: 54px; height: 50px; }
+      .titre-grand { top: 14vh; }
+    }
+
+    /* ─────────── la liste (le manuel) ─────────── */
+    .liste-vue { display: none; }
+    body.liste .liste-vue { display: block; background: url(img/grain.png), radial-gradient(120% 80% at 50% 0%, #1d1a15, var(--nuit) 70%); background-color: var(--nuit); background-attachment: fixed; min-height: 100vh; }
+    .liste-vue main { max-width: 1160px; margin: 0 auto; padding: max(30px, env(safe-area-inset-top)) clamp(16px, 4vw, 40px) 50px; }
     .tete { text-align: center; padding: clamp(30px, 7vw, 80px) 0 clamp(26px, 5vw, 52px); }
-    .etiquette { margin: 0; display: grid; justify-items: center; gap: 10px; color: var(--os); }
-    .etiquette b { font: 700 clamp(2.5rem, 9vw, 6.2rem)/.92 "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: -.02em; text-transform: uppercase; color: #cdc9c0; }
+    .etiquette { margin: 0; display: grid; justify-items: center; gap: 10px; }
+    .etiquette b { font: 700 clamp(2.5rem, 9vw, 6.2rem)/.92 "Inter Tight", Helvetica, Arial, sans-serif; letter-spacing: -.02em; text-transform: uppercase; color: #cdc9c0; }
     .etiquette span { font: 500 clamp(.8rem, 2vw, 1.05rem)/1 "IBM Plex Mono", monospace; letter-spacing: .4em; text-transform: uppercase; color: var(--cendre); padding-left: .4em; }
-    .cache { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-    h1 { margin: 18px auto 0; max-width: 18ch; font: 600 clamp(2.2rem, 5.6vw, 4.6rem)/1.02 "Cormorant Garamond", Georgia, serif; letter-spacing: -0.015em; text-shadow: 0 0 40px rgba(217,162,87,.18); }
-    .sous { margin: 22px auto 0; max-width: 40ch; font-style: italic; font-size: clamp(18px, 2vw, 22px); color: var(--cendre); }
-    .filet { display: flex; align-items: center; gap: 14px; margin: clamp(28px, 4vw, 44px) auto 0; max-width: 520px; color: var(--cendre); }
+    .filet { display: flex; align-items: center; gap: 14px; margin: clamp(28px, 4vw, 44px) auto 0; max-width: 520px; }
     .filet::before, .filet::after { content: ""; flex: 1; height: 3px; border-top: 1px solid var(--trait); border-bottom: 1px solid var(--trait); }
     .filet span { width: 7px; height: 7px; transform: rotate(45deg); background: var(--rouille); }
-
+    .vers-parcours { display: block; margin: 22px auto 0; padding: 10px 16px; border: 1px solid var(--trait); color: var(--cendre); }
+    .vers-parcours:hover { color: var(--os); border-color: rgba(230,220,194,.6); }
     .pages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(18px, 2.6vw, 34px); margin: 0; padding: 0; list-style: none; }
     .page { position: relative; display: grid; grid-template-rows: auto 1fr; height: 100%; text-decoration: none; }
-    .cadre { position: relative; padding: 7px; border: 1px solid var(--trait); background: rgba(0,0,0,.35); }
+    .cadre { position: relative; padding: 7px; border: 1px solid var(--trait); background: rgba(0,0,0,.35); overflow: hidden; }
     .cadre::after { content: ""; position: absolute; inset: 7px; pointer-events: none; background: repeating-linear-gradient(180deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px); mix-blend-mode: multiply; }
     .cadre img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; image-rendering: pixelated; filter: brightness(.86) saturate(.9); transition: filter .35s, transform .6s cubic-bezier(.2,.8,.2,1); }
-    .numero-inutile { position: absolute; z-index: 1; left: 15px; top: 13px; font: 500 12px/1 "IBM Plex Mono", monospace; letter-spacing: .14em; color: var(--os); text-shadow: 0 1px 0 #000; }
     .texte { display: grid; align-content: start; gap: 4px; padding: 14px 4px 0; }
     .titre { margin: 0; font-weight: 600; font-size: clamp(1.3rem, 1.9vw, 1.55rem); line-height: 1.1; }
-    @media (max-width: 560px) { .titre { min-height: 0; } }
     .legende { margin: 0; font-style: italic; color: var(--cendre); }
     a.page .cadre { transition: border-color .3s; }
     a.page:hover .cadre, a.page:focus-visible .cadre { border-color: rgba(230,220,194,.6); }
@@ -54,54 +109,199 @@
     a.page:focus-visible { outline: none; }
     a.page .titre::after { content: " →"; font-family: "IBM Plex Mono", monospace; font-size: .6em; vertical-align: .22em; color: var(--rouille); opacity: 0; transition: opacity .3s; }
     a.page:hover .titre::after, a.page:focus-visible .titre::after { opacity: 1; }
-    .cadre { overflow: hidden; }
     .bientot img { filter: brightness(.6) saturate(.5) contrast(.95); }
     .bientot .legende { color: var(--rouille); font-style: normal; font-family: "IBM Plex Mono", monospace; font-size: 14px; letter-spacing: .04em; }
-
     footer { margin-top: clamp(40px, 6vw, 70px); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding-top: 16px; border-top: 1px solid var(--trait); font: 500 12px/1.4 "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--cendre); }
     footer a { text-decoration: none; } footer a:hover { color: var(--os); }
-
     @media (max-width: 900px) { .pages { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 560px) { .pages { grid-template-columns: minmax(0, 1fr); } body { font-size: 18px; } }
-    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    body.cliche .hud { display: none; }
   </style>
 </head>
-<body>
-  <main>
-    <header class="tete">
-      <p class="etiquette"><b>OSB Corporation</b><span>présente :</span></p>
-      <h1 class="cache">Les créations d'Amélien</h1>
-      <div class="filet" aria-hidden="true"><span></span></div>
-    </header>
+<body class="parcours">
+  <canvas id="toile" aria-hidden="true"></canvas>
 
-    <ul class="pages">
-      <li><a class="page" href="https://www.onsenbranle.fr">
-        <div class="cadre"><img src="img/onsenbranle.png" alt="Une porte de lumière au fond d'une salle sombre"></div>
-        <div class="texte"><p class="titre">Onsenbranle.fr</p><p class="legende">Le point de départ</p></div>
-      </a></li>
-      <li><a class="page" href="https://amelienito.github.io/music-discovery/">
-        <div class="cadre"><img src="img/music-discovery.png" alt="Un disque irisé qui flotte au-dessus d'une plaine, la nuit"></div>
-        <div class="texte"><p class="titre">Music Discovery</p><p class="legende">Pour découvrir de la musique</p></div>
-      </a></li>
-      <li><a class="page" href="https://amelienito.github.io/cite-trois-chinois/">
-        <div class="cadre"><img src="img/cite-3-chinois.png" alt="Un globe dans la nuit, trois lumières à sa surface"></div>
-        <div class="texte"><p class="titre">Cite 3 Chinois</p><p class="legende">Juste pour voir</p></div>
-      </a></li>
-      <li><div class="page bientot">
-        <div class="cadre"><img src="img/flechettes.png" alt="Un point d'interrogation de pierre en lévitation"></div>
-        <div class="texte"><p class="titre">Raciste ou joueur de fléchettes&nbsp;?</p><p class="legende">(en travaux)</p></div>
-      </div></li>
-      <li><div class="page bientot">
-        <div class="cadre"><img src="img/quiz.png" alt="Un point d'interrogation de pierre en lévitation"></div>
-        <div class="texte"><p class="titre">Un quiz de fun facts</p><p class="legende">Disponible quand c'est dispo</p></div>
-      </div></li>
-      <li><div class="page bientot">
-        <div class="cadre"><img src="img/a-venir.png" alt="Une lumière au bout d'un chemin, dans la brume"></div>
-        <div class="texte"><p class="titre">D'autres créations arrivent</p><p class="legende">…</p></div>
-      </div></li>
-    </ul>
+  <div class="hud">
+    <a class="marque" href="#" data-aller="0" aria-label="Retour au début"><b>OSB Corporation</b><span class="mono">présente :</span></a>
+    <div class="outils">
+      <button class="outil mono" id="son" aria-pressed="false">Son</button>
+      <button class="outil mono" id="vers-liste">Liste</button>
+    </div>
+    <div class="titre-grand"><h1>Les créations d'Amélien</h1><b aria-hidden="true">OSB Corporation</b><span aria-hidden="true">présente :</span></div>
+    <button class="avancer mono" id="avancer"><span>Avancer</span><i aria-hidden="true"></i></button>
+    <section class="fiche" id="fiche" aria-live="polite">
+      <span class="num mono" id="fiche-num"></span>
+      <h2 id="fiche-titre"></h2>
+      <p id="fiche-legende"></p>
+      <a class="entrer mono" id="fiche-lien" href="#">Entrer</a>
+    </section>
+    <ol class="sommaire" id="sommaire" aria-label="Les créations"></ol>
+    <div class="fleches">
+      <button class="outil" id="precedent" aria-label="Création précédente">↑</button>
+      <button class="outil" id="suivant" aria-label="Création suivante">↓</button>
+    </div>
+  </div>
 
-    <footer><span>Amélien, 2026</span><a href="https://www.onsenbranle.fr">onsenbranle.fr</a></footer>
-  </main>
+  <div class="liste-vue">
+    <main>
+      <header class="tete">
+        <p class="etiquette"><b>OSB Corporation</b><span>présente :</span></p>
+        <div class="filet" aria-hidden="true"><span></span></div>
+        <button class="vers-parcours mono" id="vers-parcours">Reprendre le chemin</button>
+      </header>
+      <ul class="pages" id="pages"></ul>
+      <footer><span>Amélien, 2026</span><a href="https://www.onsenbranle.fr">onsenbranle.fr</a></footer>
+    </main>
+  </div>
+
+  <noscript><style>body.parcours { overflow: auto; height: auto; } #toile, .hud { display: none; } .liste-vue { display: block !important; }</style>
+    <p style="text-align:center;padding:20px">Onsenbranle.fr · Music Discovery · Cite 3 Chinois · RP Talya · Fun facts</p></noscript>
+
+  <script type="module">
+    /* ─────────── les créations : c'est ici qu'on en ajoute ───────────
+       forme : porte, disque, globe, talya, cabinet, flechettes, lointain */
+    const ETAPES = [
+      { id: 'arrivee' },
+      { id: 'onsenbranle', titre: 'Onsenbranle.fr', legende: 'Le point de départ', lien: 'https://www.onsenbranle.fr', forme: 'porte', couleur: '#ffb35c', image: 'img/onsenbranle.png' },
+      { id: 'music-discovery', titre: 'Music Discovery', legende: 'Pour découvrir de la musique', lien: 'https://amelienito.github.io/music-discovery/', forme: 'disque', couleur: '#9fd8ff', image: 'img/music-discovery.png' },
+      { id: 'cite-3-chinois', titre: 'Cite 3 Chinois', legende: 'Juste pour voir', lien: 'https://amelienito.github.io/cite-trois-chinois/', forme: 'globe', couleur: '#ffc96b', image: 'img/cite-3-chinois.png' },
+      { id: 'hb', titre: 'RP Talya', legende: 'Un jeu où Talya décide de tout', lien: 'https://amelienito.github.io/Hb/', forme: 'talya', couleur: '#cfe8dc', image: 'img/rp-talya.png' },
+      { id: 'fun-facts', titre: 'Fun facts', legende: 'Un terrier de faits vérifiés', lien: 'https://amelienito.github.io/fun-facts/', forme: 'cabinet', couleur: '#e3b04b', image: 'img/fun-facts.png' },
+      { id: 'flechettes', titre: 'Raciste ou joueur de fléchettes ?', legende: '(en travaux)', forme: 'flechettes', couleur: '#d9822b', image: 'img/flechettes.png' },
+      { id: 'a-venir', titre: 'D\'autres créations arrivent', legende: '…', forme: 'lointain', couleur: '#e6dcc2', image: 'img/a-venir.png' },
+    ];
+
+    const $ = s => document.querySelector(s);
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const memoire = { lire(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }, ecrire(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+    const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cliche = new URLSearchParams(location.search).get('cliche');
+    if (cliche) document.body.classList.add('cliche');
+
+    /* la liste */
+    $('#pages').innerHTML = ETAPES.slice(1).map(e => {
+      const corps = `<div class="cadre"><img src="${e.image}" alt="" loading="lazy"></div><div class="texte"><p class="titre">${esc(e.titre)}</p><p class="legende">${esc(e.legende)}</p></div>`;
+      return e.lien ? `<li><a class="page" href="${e.lien}">${corps}</a></li>` : `<li><div class="page bientot">${corps}</div></li>`;
+    }).join('');
+
+    /* le sommaire */
+    $('#sommaire').innerHTML = ETAPES.slice(1).map((e, i) => `<li><button data-aller="${i + 1}"><span class="mono">${esc(e.titre.replace(/ \?$/, ' ?'))}</span></button></li>`).join('');
+
+    /* le son : une nappe grave, une note à chaque arrivée (coupé par défaut) */
+    let audio = null, sonActif = memoire.lire('osb-son', '0') === '1';
+    const NOTES = [0, 3, 5, 7, 10, 12, 15, 17];
+    function preparerSon() {
+      if (audio) return audio;
+      const c = new (window.AudioContext || window.webkitAudioContext)();
+      const sortie = c.createGain(); sortie.gain.value = 0; sortie.connect(c.destination);
+      const filtre = c.createBiquadFilter(); filtre.type = 'lowpass'; filtre.frequency.value = 420; filtre.connect(sortie);
+      [55, 82.4, 110.3].forEach((f, i) => { const o = c.createOscillator(); o.type = i === 1 ? 'triangle' : 'sawtooth'; o.frequency.value = f; o.detune.value = (i - 1) * 7; const g = c.createGain(); g.gain.value = i === 1 ? .05 : .025; o.connect(g); g.connect(filtre); o.start(); });
+      audio = { c, sortie };
+      return audio;
+    }
+    function note(k, fort) {
+      if (!sonActif || !audio) return;
+      const { c, sortie } = audio, t = c.currentTime;
+      const f = 220 * Math.pow(2, NOTES[k % NOTES.length] / 12);
+      [1, 2.01].forEach((m, i) => {
+        const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f * m;
+        const g = c.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime((fort ? .16 : .09) / (i + 1), t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + (fort ? 2.2 : 1.6));
+        o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 2.3);
+      });
+    }
+    function majSon() {
+      $('#son').setAttribute('aria-pressed', sonActif);
+      $('#son').textContent = sonActif ? 'Son : oui' : 'Son';
+      if (audio) audio.sortie.gain.setTargetAtTime(sonActif ? 1 : 0, audio.c.currentTime, .4);
+    }
+    $('#son').addEventListener('click', () => {
+      sonActif = !sonActif; memoire.ecrire('osb-son', sonActif ? '1' : '0');
+      preparerSon(); if (audio.c.state === 'suspended') audio.c.resume();
+      majSon(); if (sonActif) note(parcours ? parcours.actuelle() : 0, true);
+    });
+    majSon();
+    // le navigateur n'accepte le son qu'après un geste : on le prépare au premier contact
+    addEventListener('pointerdown', () => { if (sonActif) { preparerSon(); audio.c.resume(); majSon(); } }, { once: true });
+
+    /* la fiche de l'étape en cours */
+    function afficher(k, { touche } = {}) {
+      document.body.classList.toggle('en-route', k > 0);
+      document.querySelectorAll('[data-aller]').forEach(b => b.setAttribute('aria-current', String(+b.dataset.aller === k && k > 0)));
+      const fiche = $('#fiche');
+      if (touche) { note(k, true); return; }
+      note(k, false);
+      if (k === 0) { fiche.classList.remove('visible'); return; }
+      const e = ETAPES[k];
+      fiche.classList.remove('visible');
+      document.documentElement.style.setProperty('--accent', e.couleur);
+      clearTimeout(afficher.t);
+      afficher.t = setTimeout(() => {
+        $('#fiche-num').textContent = `${String(k).padStart(2, '0')} / ${String(ETAPES.length - 1).padStart(2, '0')}`;
+        $('#fiche-titre').textContent = e.titre;
+        $('#fiche-legende').textContent = e.legende;
+        const l = $('#fiche-lien');
+        if (e.lien) { l.href = e.lien; l.textContent = 'Entrer'; l.classList.remove('ferme'); l.removeAttribute('aria-disabled'); }
+        else { l.removeAttribute('href'); l.textContent = k === ETAPES.length - 1 ? 'Bientôt' : 'Pas encore ouvert'; l.classList.add('ferme'); l.setAttribute('aria-disabled', 'true'); }
+        fiche.classList.add('visible');
+      }, 220);
+    }
+
+    /* entrer : un éclair, puis on y va */
+    $('#fiche-lien').addEventListener('click', ev => {
+      const href = $('#fiche-lien').getAttribute('href');
+      if (!href) { ev.preventDefault(); return; }
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
+      ev.preventDefault();
+      if (parcours) parcours.eclair();
+      note(parcours ? parcours.actuelle() + 7 : 7, true);
+      setTimeout(() => { location.href = href; }, reduit ? 0 : 380);
+    });
+
+    /* vue liste */
+    function liste(oui) {
+      document.body.classList.toggle('liste', oui);
+      document.body.classList.toggle('parcours', !oui);
+      memoire.ecrire('osb-vue', oui ? 'liste' : 'parcours');
+      if (parcours) parcours.pause(oui);
+      if (oui) scrollTo(0, 0);
+    }
+    $('#vers-liste').addEventListener('click', () => liste(true));
+    $('#vers-parcours').addEventListener('click', () => { if (!parcours) return; liste(false); });
+
+    /* le parcours */
+    let parcours = null;
+    async function lancer() {
+      try {
+        const essai = document.createElement('canvas');
+        if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
+        const { demarrer } = await import('./scene.js');
+        parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit });
+      } catch (e) {
+        console.warn('Parcours indisponible, on passe à la liste.', e);
+        $('#vers-parcours').hidden = true;
+        liste(true);
+        return;
+      }
+      if (memoire.lire('osb-vue', 'parcours') === 'liste' && !cliche) liste(true);
+    }
+    lancer();
+
+    document.addEventListener('click', e => {
+      const b = e.target.closest('[data-aller]'); if (!b || !parcours) return;
+      e.preventDefault(); parcours.aller(+b.dataset.aller);
+    });
+    $('#avancer').addEventListener('click', () => parcours && parcours.suivant());
+    $('#suivant').addEventListener('click', () => parcours && parcours.suivant());
+    $('#precedent').addEventListener('click', () => parcours && parcours.precedent());
+    addEventListener('keydown', e => {
+      if (!parcours || document.body.classList.contains('liste')) return;
+      if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); parcours.suivant(); }
+      else if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); parcours.precedent(); }
+      else if (e.key === 'Home') parcours.aller(0);
+      else if (e.key === 'End') parcours.aller(ETAPES.length - 1);
+      else if (e.key === 'Enter' && document.activeElement === document.body) { const l = $('#fiche-lien'); if (l.getAttribute('href')) l.click(); }
+    });
+  </script>
 </body>
 </html>
