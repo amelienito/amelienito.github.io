@@ -179,9 +179,20 @@ export function demarrer({ toile, etapes, surEtape, reduit }) {
     for (const o of objets) {
       if (lancer.intersectObject(o.groupe, true).length) {
         if (Math.round(t) !== o.k) { aller(o.k); return; }
-        o.secousse = 1; o.touche(); surEtape(o.k, { touche: true }); return;
+        o.secousse = 1; o.touche(); surEtape(o.k, { entrer: true }); return;
       }
     }
+  });
+  // la main apparaît au-dessus d'un objet : on comprend qu'on peut cliquer
+  let survolPrevu = false;
+  toile.addEventListener('pointermove', e => {
+    if (survolPrevu || e.pointerType !== 'mouse') return;
+    survolPrevu = true;
+    requestAnimationFrame(() => {
+      survolPrevu = false;
+      lancer.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+      toile.style.cursor = objets.some(o => lancer.intersectObject(o.groupe, true).length) ? 'pointer' : '';
+    });
   });
 
   /* ─────────── la boucle ─────────── */

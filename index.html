@@ -74,7 +74,12 @@
     .fleches { position: fixed; right: clamp(16px, 3vw, 34px); bottom: max(26px, calc(env(safe-area-inset-bottom) + 14px)); display: flex; gap: 8px; }
     .fleches .outil { width: 46px; height: 46px; padding: 0; display: grid; place-items: center; font: 500 18px/1 "IBM Plex Mono", monospace; }
 
+    .aide { position: fixed; right: clamp(16px, 3vw, 34px); bottom: max(84px, calc(env(safe-area-inset-bottom) + 72px)); margin: 0; max-width: 260px; text-align: right; color: var(--cendre); line-height: 1.6; text-shadow: 0 1px 8px #000; }
+    .aide-tel { display: none; }
+    body:not(.en-route) .aide { display: none; }
+    @media (hover: none) { .aide-ordi { display: none; } .aide-tel { display: inline; } }
     @media (max-width: 720px) {
+      .aide { left: 76px; right: 76px; bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px)); max-width: none; text-align: center; font-size: 10px; letter-spacing: .08em; }
       .sommaire { display: none; }
       .fiche { right: 16px; bottom: max(84px, calc(env(safe-area-inset-bottom) + 76px)); }
       .fleches { left: 16px; right: 16px; justify-content: space-between; }
@@ -137,6 +142,7 @@
       <a class="entrer mono" id="fiche-lien" href="#">Entrer</a>
     </section>
     <ol class="sommaire" id="sommaire" aria-label="Les créations"></ol>
+    <p class="aide mono" id="aide"><span class="aide-ordi">Molette ou flèches pour avancer · clique sur l'objet pour entrer</span><span class="aide-tel">Glisse pour avancer · touche l'objet pour entrer</span></p>
     <div class="fleches">
       <button class="outil" id="precedent" aria-label="Création précédente">↑</button>
       <button class="outil" id="suivant" aria-label="Création suivante">↓</button>
@@ -166,7 +172,7 @@
       { id: 'onsenbranle', titre: 'Onsenbranle.fr', legende: 'Le point de départ', lien: 'https://www.onsenbranle.fr', forme: 'porte', couleur: '#ffb35c', image: 'img/onsenbranle.png' },
       { id: 'music-discovery', titre: 'Music Discovery', legende: 'Pour découvrir de la musique', lien: 'https://amelienito.github.io/music-discovery/', forme: 'disque', couleur: '#9fd8ff', image: 'img/music-discovery.png' },
       { id: 'cite-3-chinois', titre: 'Cite 3 Chinois', legende: 'Juste pour voir', lien: 'https://amelienito.github.io/cite-trois-chinois/', forme: 'globe', couleur: '#ffc96b', image: 'img/cite-3-chinois.png' },
-      { id: 'hb', titre: 'RP Talya', legende: 'Un jeu où Talya décide de tout', lien: 'https://amelienito.github.io/Hb/', forme: 'talya', couleur: '#cfe8dc', image: 'img/rp-talya.png' },
+      { id: 'hb', titre: 'RP Talya', legende: 'Joyeux anniversaire Flo', lien: 'https://amelienito.github.io/Hb/', forme: 'talya', couleur: '#cfe8dc', image: 'img/rp-talya.png' },
       { id: 'fun-facts', titre: 'Fun facts', legende: 'Un terrier de faits vérifiés', lien: 'https://amelienito.github.io/fun-facts/', forme: 'cabinet', couleur: '#e3b04b', image: 'img/fun-facts.png' },
       { id: 'flechettes', titre: 'Raciste ou joueur de fléchettes ?', legende: '(en travaux)', forme: 'flechettes', couleur: '#d9822b', image: 'img/flechettes.png' },
       { id: 'a-venir', titre: 'D\'autres créations arrivent', legende: '…', forme: 'lointain', couleur: '#e6dcc2', image: 'img/a-venir.png' },
@@ -225,7 +231,8 @@
     addEventListener('pointerdown', () => { if (sonActif) { preparerSon(); audio.c.resume(); majSon(); } }, { once: true });
 
     /* la fiche de l'étape en cours */
-    function afficher(k, { touche } = {}) {
+    function afficher(k, { touche, entrer } = {}) {
+      if (entrer) { const l = $('#fiche-lien'); if (ETAPES[k] && ETAPES[k].lien) { entrerDans(ETAPES[k].lien); } else note(k, true); return; }
       document.body.classList.toggle('en-route', k > 0);
       document.querySelectorAll('[data-aller]').forEach(b => b.setAttribute('aria-current', String(+b.dataset.aller === k && k > 0)));
       const fiche = $('#fiche');
@@ -248,14 +255,17 @@
     }
 
     /* entrer : un éclair, puis on y va */
+    function entrerDans(href) {
+      if (parcours) parcours.eclair();
+      note(parcours ? parcours.actuelle() + 7 : 7, true);
+      setTimeout(() => { location.href = href; }, reduit ? 0 : 380);
+    }
     $('#fiche-lien').addEventListener('click', ev => {
       const href = $('#fiche-lien').getAttribute('href');
       if (!href) { ev.preventDefault(); return; }
       if (ev.metaKey || ev.ctrlKey || ev.shiftKey) return;
       ev.preventDefault();
-      if (parcours) parcours.eclair();
-      note(parcours ? parcours.actuelle() + 7 : 7, true);
-      setTimeout(() => { location.href = href; }, reduit ? 0 : 380);
+      entrerDans(href);
     });
 
     /* vue liste */
