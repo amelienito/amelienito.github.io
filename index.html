@@ -28,7 +28,10 @@
 
     /* ─────────── le parcours ─────────── */
     body.parcours { overflow: hidden; height: 100svh; }
-    #toile { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; touch-action: none; }
+    #toile { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+    .hud::before { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 46vh; pointer-events: none; background: linear-gradient(transparent, rgba(13,10,7,.78)); opacity: 0; transition: opacity .6s; }
+    .hud::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 34vh; pointer-events: none; background: linear-gradient(rgba(13,10,7,.7), transparent); }
+    body.en-route .hud::before { opacity: 1; }
     body.liste #toile, body.liste .hud { display: none; }
     .hud { position: fixed; inset: 0; pointer-events: none; }
     .hud > * { pointer-events: auto; }
@@ -166,16 +169,16 @@
 
   <script type="module">
     /* ─────────── les créations : c'est ici qu'on en ajoute ───────────
-       forme : porte, disque, globe, talya, cabinet, flechettes, lointain */
+       forme : ordi, platine, globe, talya, cabinet, flechettes, carton (leur place est dans scene.js, PLACES) */
     const ETAPES = [
       { id: 'arrivee' },
-      { id: 'onsenbranle', titre: 'Onsenbranle.fr', legende: 'Le point de départ', lien: 'https://www.onsenbranle.fr', forme: 'porte', couleur: '#ffb35c', image: 'img/onsenbranle.png' },
-      { id: 'music-discovery', titre: 'Music Discovery', legende: 'Pour découvrir de la musique', lien: 'https://amelienito.github.io/music-discovery/', forme: 'disque', couleur: '#9fd8ff', image: 'img/music-discovery.png' },
+      { id: 'onsenbranle', titre: 'Onsenbranle.fr', legende: 'Le point de départ', lien: 'https://www.onsenbranle.fr', forme: 'ordi', couleur: '#ffcf8a', image: 'img/onsenbranle.png' },
+      { id: 'music-discovery', titre: 'Music Discovery', legende: 'Pour découvrir de la musique', lien: 'https://amelienito.github.io/music-discovery/', forme: 'platine', couleur: '#9fd8ff', image: 'img/music-discovery.png' },
       { id: 'cite-3-chinois', titre: 'Cite 3 Chinois', legende: 'Juste pour voir', lien: 'https://amelienito.github.io/cite-trois-chinois/', forme: 'globe', couleur: '#ffc96b', image: 'img/cite-3-chinois.png' },
       { id: 'hb', titre: 'RP Talya', legende: 'Joyeux anniversaire Flo', lien: 'https://amelienito.github.io/Hb/', forme: 'talya', couleur: '#cfe8dc', image: 'img/rp-talya.png' },
       { id: 'fun-facts', titre: 'Fun facts', legende: 'Un terrier de faits vérifiés', lien: 'https://amelienito.github.io/fun-facts/', forme: 'cabinet', couleur: '#e3b04b', image: 'img/fun-facts.png' },
       { id: 'flechettes', titre: 'Raciste ou joueur de fléchettes ?', legende: '(en travaux)', forme: 'flechettes', couleur: '#d9822b', image: 'img/flechettes.png' },
-      { id: 'a-venir', titre: 'D\'autres créations arrivent', legende: '…', forme: 'lointain', couleur: '#e6dcc2', image: 'img/a-venir.png' },
+      { id: 'a-venir', titre: 'D\'autres créations arrivent', legende: '…', forme: 'carton', couleur: '#ffd9a0', image: 'img/a-venir.png' },
     ];
 
     const $ = s => document.querySelector(s);
