@@ -99,6 +99,15 @@ export function demarrer({ toile, etapes, surEtape, reduit }) {
     g.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     objets.push({ k, g, place, reflet, anime: o.anime || (() => {}), eveil: 0, secousse: 0 });
   });
+  // les objets qui ne sont pas (ou plus) une étape restent dans la pièce, en décor
+  // (ex. l'ordi allumé sur onsenbranle.fr, sorti de la sélection principale)
+  for (const forme of ['ordi']) {
+    if (etapes.some(e => e.forme === forme)) continue;
+    const place = PLACES[forme], g = new THREE.Group();
+    g.position.set(...place.pos); g.rotation.y = place.face; scene.add(g);
+    FORMES[forme](g, { M, boite });
+    g.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  }
 
   /* ─────────── la caméra ─────────── */
   let t = 0, cibleT = 0;
@@ -340,7 +349,8 @@ const FORMES = {
       const int = new THREE.Mesh(new THREE.ConeGeometry(.032, .18, 3), rose); int.position.set(0, .11, .03); o.add(int);
       return o;
     });
-    [-1, 1].forEach(c => { const oe = new THREE.Mesh(new THREE.SphereGeometry(.017, 6, 4), noir); oe.position.set(c * .07, .03, .13); tete.add(oe); });
+    // un seul œil : Talya n'a plus son œil gauche (côté +x de sa tête), on ne dessine que le droit
+    const oeil = new THREE.Mesh(new THREE.SphereGeometry(.017, 6, 4), noir); oeil.position.set(-.07, .03, .13); tete.add(oeil);
     const queue = new THREE.Mesh(new THREE.ConeGeometry(.05, .35, 5), blanc); queue.position.set(-.42, .2, .12); queue.rotation.z = 1.9; g.add(queue);
     // la gamelle et la balle
     const gamelle = new THREE.Group(); gamelle.position.set(.8, 0, .35); g.add(gamelle);
