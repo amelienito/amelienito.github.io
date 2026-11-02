@@ -232,14 +232,33 @@ function texteCiel() {
 }
 
 const FORMES = {
-  // Onsenbranle : le bureau, l'ordi allumé sur le blog
+  // Onsenbranle : le bureau en double écran, l'écran allumé sur le blog, et le MacBook (fond d'écran : Sunny, de Taiyō Matsumoto)
   ordi(g, { M, boite }) {
     const bois = M('#6b4a32', { roughness: .7 }), metal = M('#2b2b2e', { roughness: .4, metalness: .3 });
     boite(1.7, .06, .8, bois, 0, .76, 0, g);
     [[-.8, -.35], [.8, -.35], [-.8, .35], [.8, .35]].forEach(([x, z]) => boite(.06, .76, .06, bois, x, .38, z, g));
-    // l'écran
-    boite(.12, .32, .08, metal, 0, .95, -.15, g); boite(.34, .02, .2, metal, 0, .8, -.15, g);
-    boite(.92, .58, .05, metal, 0, 1.33, -.17, g);
+    // le MacBook, ouvert à droite de l'écran, un peu tourné vers la chaise
+    const mac = new THREE.Group(); mac.position.set(.43, .79, .03); mac.rotation.y = -.35; g.add(mac);
+    const alu = M('#c3c6cc', { roughness: .35, metalness: .45, flatShading: false });
+    boite(.46, .016, .32, alu, 0, .008, 0, mac);
+    boite(.39, .003, .13, M('#1c1c1f', { roughness: .6 }), 0, .017, -.045, mac);       // le clavier
+    boite(.15, .002, .085, M('#b4b7bd', { roughness: .3, metalness: .4 }), 0, .017, .095, mac);   // le trackpad
+    const capot = new THREE.Group(); capot.position.set(0, .016, -.158); capot.rotation.x = -.28; mac.add(capot);
+    boite(.46, .3, .008, alu, 0, .15, -.004, capot);
+    const cadreNoir = new THREE.Mesh(new THREE.PlaneGeometry(.448, .29), new THREE.MeshBasicMaterial({ color: '#0d0d0f' }));
+    cadreNoir.position.set(0, .152, .001); capot.add(cadreNoir);
+    const fond = new THREE.MeshBasicMaterial({ color: '#16161a', toneMapped: false });
+    new THREE.TextureLoader().load('img/fond-sunny.jpg', tex => {
+      tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      fond.map = tex; fond.color.set('#ebebeb'); fond.needsUpdate = true;
+    });
+    const ecranMac = new THREE.Mesh(new THREE.PlaneGeometry(.416, .26), fond);
+    ecranMac.position.set(0, .157, .002); capot.add(ecranMac);
+    const lueur = new THREE.PointLight('#ffe3b8', .35, 1.1, 1.6); lueur.position.set(0, .16, .18); capot.add(lueur);
+    // l'écran, décalé à gauche
+    const moniteur = new THREE.Group(); moniteur.position.x = -.3; g.add(moniteur);
+    boite(.12, .32, .08, metal, 0, .95, -.15, moniteur); boite(.34, .02, .2, metal, 0, .8, -.15, moniteur);
+    boite(.92, .58, .05, metal, 0, 1.33, -.17, moniteur);
     const ecran = new THREE.Mesh(new THREE.PlaneGeometry(.84, .5), new THREE.MeshBasicMaterial({ map: toileTexte(512, 305, (x, w, h) => {
       x.fillStyle = '#f4efe4'; x.fillRect(0, 0, w, h);
       x.fillStyle = '#1b1a17'; x.fillRect(0, 0, w, 34);
@@ -248,14 +267,14 @@ const FORMES = {
       x.fillStyle = '#b8b0a0'; for (let i = 0; i < 6; i++) x.fillRect(24, 160 + i * 20, (i % 3 === 2 ? 260 : 440) * .9, 7);
       x.fillStyle = '#c8572f'; x.fillRect(24, 148, 60, 4);
     }) }));
-    ecran.position.set(0, 1.33, -.143); g.add(ecran);
+    ecran.position.set(0, 1.33, -.143); moniteur.add(ecran);
     // clavier, souris, tasse, carnet
-    boite(.5, .02, .16, M('#e9e4d8'), -.05, .8, .14, g);
-    boite(.07, .02, .1, M('#e9e4d8'), .34, .8, .16, g);
-    const tasse = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .1, 10), M('#c8572f')); tasse.position.set(.62, .84, -.05); g.add(tasse);
-    boite(.24, .02, .3, M('#2f4a5a'), -.6, .8, .05, g).rotation.y = .3;
-    // la lampe de bureau
-    const lampe = new THREE.Group(); lampe.position.set(-.65, .79, -.25); g.add(lampe);
+    boite(.5, .02, .16, M('#e9e4d8'), -.32, .8, .16, g);
+    boite(.07, .02, .1, M('#e9e4d8'), .02, .8, .2, g);
+    const tasse = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .1, 10), M('#c8572f')); tasse.position.set(.74, .84, .27); g.add(tasse);
+    boite(.24, .02, .3, M('#2f4a5a'), -.7, .8, .14, g).rotation.y = .3;
+    // la lampe de bureau, au fond à droite, penchée sur le MacBook
+    const lampe = new THREE.Group(); lampe.position.set(.74, .79, -.3); lampe.rotation.y = Math.PI * 1.15; g.add(lampe);
     const pied = new THREE.Mesh(new THREE.CylinderGeometry(.08, .09, .03, 10), metal); lampe.add(pied);
     const bras = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .45, 5), metal); bras.position.set(.06, .22, 0); bras.rotation.z = -.3; lampe.add(bras);
     const abat = new THREE.Mesh(new THREE.ConeGeometry(.1, .14, 10, 1, true), M('#d9a23a', { side: THREE.DoubleSide })); abat.position.set(.15, .44, 0); abat.rotation.z = 2.3; lampe.add(abat);
