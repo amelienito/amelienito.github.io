@@ -20,7 +20,7 @@ const PLACES = {
   carton:     { pos: [-1.6, 0, 2.3],   face: .5,           vue: [2.2, 1.45, .35] },
 };
 
-export function demarrer({ toile, etapes, surEtape, reduit }) {
+export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {} }) {
   const N = etapes.length;
   const cliche = new URLSearchParams(location.search).get('cliche');
 
@@ -116,12 +116,15 @@ export function demarrer({ toile, etapes, surEtape, reduit }) {
   });
   // les objets qui ne sont pas (ou plus) une étape restent dans la pièce, en décor
   // (ex. l'ordi allumé sur onsenbranle.fr, sorti de la sélection principale)
+  // un décor peut quand même s'ouvrir d'un clic (discret : pas d'étape, pas de fiche)
+  const decorsCliquables = [];
   for (const forme of ['ordi']) {
     if (etapes.some(e => e.forme === forme)) continue;
     const place = PLACES[forme], g = new THREE.Group();
     g.position.set(...place.pos); g.rotation.y = place.face; scene.add(g);
     FORMES[forme](g, { M, boite });
     g.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    if (decors[forme]) decorsCliquables.push({ g, decor: decors[forme] });
   }
 
   /* ─────────── la caméra ─────────── */
@@ -170,11 +173,12 @@ export function demarrer({ toile, etapes, surEtape, reduit }) {
   const touche = (x, y) => {
     lancer.setFromCamera(new THREE.Vector2(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
     let mieux = null, d = Infinity;
-    for (const o of objets) { const h = lancer.intersectObject(o.g, true)[0]; if (h && h.distance < d) { d = h.distance; mieux = o; } }
+    for (const o of [...objets, ...decorsCliquables]) { const h = lancer.intersectObject(o.g, true)[0]; if (h && h.distance < d) { d = h.distance; mieux = o; } }
     return mieux;
   };
   toile.addEventListener('click', e => {
     const o = touche(e.clientX, e.clientY); if (!o) return;
+    if (o.decor) { surDecor(o.decor); return; }
     if (o.caresser) { if (Math.round(t) !== o.k) aller(o.k); o.caresser(); surEtape(o.k, { caresse: true }); return; }
     if (Math.round(t) !== o.k) { aller(o.k); return; }
     o.secousse = 1; surEtape(o.k, { entrer: true });

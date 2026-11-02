@@ -172,7 +172,7 @@
   <script type="module">
     /* ─────────── les créations : c'est ici qu'on en ajoute ───────────
        forme : ordi, platine, globe, talya, cabinet, flechettes, carton (leur place est dans scene.js, PLACES).
-       onsenbranle.fr n'est plus une étape : l'ordi reste dans la pièce en décor, et le lien est en bas de la liste. */
+       onsenbranle.fr n'est plus une étape : l'ordi reste dans la pièce en décor (un clic dessus l'ouvre), et le lien est en bas de la liste. */
     const ETAPES = [
       { id: 'arrivee' },
       { id: 'fun-facts', titre: 'Fun facts', legende: 'Pour apprendre en s’amusant', lien: 'https://amelienito.github.io/fun-facts/', forme: 'cabinet', couleur: '#e3b04b', image: 'img/fun-facts.png' },
@@ -305,7 +305,9 @@
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
         const { demarrer } = await import('./scene.js');
-        parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit });
+        parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
+          // l'ordi (onsenbranle.fr) n'est pas une étape, mais un clic dessus l'ouvre, comme les autres
+          decors: { ordi: { lien: 'https://www.onsenbranle.fr' } }, surDecor: d => entrerDans(d.lien) });
       } catch (e) {
         console.warn('Parcours indisponible, on passe à la liste.', e);
         $('#vers-parcours').hidden = true;
