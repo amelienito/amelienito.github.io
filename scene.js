@@ -85,6 +85,21 @@ export function demarrer({ toile, etapes, surEtape, reduit }) {
     const f = new THREE.Mesh(new THREE.ConeGeometry(.09, .8, 4), M('#4f7a46')); f.position.set(4.4 + Math.cos(i) * .08, .7, -3.7 + Math.sin(i) * .08);
     f.rotation.set(Math.sin(i * 2) * .5, i, Math.cos(i * 2) * .5); f.castShadow = true; scene.add(f);
   }
+  // aux murs : ses images, encadrées
+  const chargeur = new THREE.TextureLoader();
+  function tableau(url, w, h, x, y, z, ry, { cadre = '#1d1b19', bord = .035, epais = .03, dore = false } = {}) {
+    const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g);
+    const c = boite(w + bord * 2, h + bord * 2, epais, M(cadre, dore ? { metalness: .55, roughness: .38, flatShading: false } : { roughness: .6 }), 0, 0, 0, g);
+    c.castShadow = false;
+    const mat = new THREE.MeshStandardMaterial({ color: '#2a2622', roughness: .85 });
+    // un peu de lumière propre, sinon le haut des murs les avale
+    chargeur.load(url, tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; mat.map = mat.emissiveMap = tex; mat.color.set('#ffffff'); mat.emissive.set('#ffffff'); mat.emissiveIntensity = .42; mat.needsUpdate = true; });
+    const image = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); image.position.z = epais / 2 + .001; image.receiveShadow = true; g.add(image);
+  }
+  tableau('img/murs/chief-keef.jpg', 1.0, .749, 1.9, 1.54, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .05, dore: true });   // Chief Keef au jardin d'Éden, au-dessus de la platine
+  tableau('img/murs/koi.jpg', .66, .66, -2.6, 2.06, -4.18, 0, { cadre: '#e9e1cf', bord: .05 });                                     // la carpe géante, au-dessus du bureau
+  tableau('img/murs/i-love-ugly.jpg', .96, .642, -4.99, 1.86, .62, Math.PI / 2);                                                   // I Love Ugly (Chester Watson), entre le globe et la cible
+  tableau('img/murs/evil-dead-2.jpg', .56, .868, 4.99, 1.72, -2.85, -Math.PI / 2, { cadre: '#0e0d0c' });                           // Evil Dead 2, entre la plante et le cabinet de curiosités
 
   /* ─────────── les créations ─────────── */
   const objets = [];
@@ -220,6 +235,33 @@ function toileTexte(w, h, dessin) {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { x.clearRect(0, 0, w, h); dessin(x, w, h); tex.needsUpdate = true; });
   return tex;
 }
+// un rectangle aux coins arrondis
+function arrondi(x, X, Y, W, H, r) {
+  x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + W, Y, X + W, Y + H, r); x.arcTo(X + W, Y + H, X, Y + H, r); x.arcTo(X, Y + H, X, Y, r); x.arcTo(X, Y, X + W, Y, r); x.closePath();
+}
+// onsenbranle.fr, en gros : l'en-tête violet, le titre de l'article, le bandeau bleu nuit
+function dessinerBlog(x, X, Y, W, H) {
+  const P = H * .47, police = (g, t) => `${g} ${Math.round(t)}px "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  x.fillStyle = '#7174cc'; x.fillRect(X, Y, W, P);
+  x.fillStyle = '#111'; x.font = police(800, W * .034); x.fillText('En vrai, on s’en branle.', X + W * .035, Y + H * .085);
+  x.font = police(400, W * .02); x.fillText('"Bien que j’ai grandi, j’ai su garder un esprit de gosse attardé"', X + W * .035, Y + H * .13);
+  x.fillStyle = '#3b0f22'; x.font = police(500, W * .021); x.textAlign = 'right'; x.fillText('« Bien ou quoooi ? »    Fluxxx', X + W * .9, Y + H * .09);
+  x.strokeStyle = '#111'; x.lineWidth = Math.max(1, W * .003); x.beginPath(); x.arc(X + W * .955, Y + H * .08, W * .012, 0, 7); x.stroke();
+  x.fillStyle = '#0a0a0a'; x.font = police(900, W * .088); x.textAlign = 'center'; x.fillText('« Bien ou quoooi ? »', X + W / 2, Y + H * .35);
+  x.fillStyle = '#05062e'; x.fillRect(X, Y + P, W, H - P);
+  x.font = police(800, W * .046); x.fillStyle = '#fff'; x.fillText('(dixit le vrai maire de Sevran en', X + W / 2, Y + P + H * .13);
+  const a = 'découvrant le ', b = 'logiciel Snapchat', c = ')';
+  const la = x.measureText(a).width, lb = x.measureText(b).width, lc = x.measureText(c).width, y2 = Y + P + H * .215;
+  let cx = X + W / 2 - (la + lb + lc) / 2; x.textAlign = 'left';
+  x.fillText(a, cx, y2); cx += la;
+  x.fillStyle = '#ff2056'; x.fillText(b, cx, y2); x.fillRect(cx, y2 + W * .008, lb, Math.max(1.5, W * .004)); cx += lb;
+  x.fillStyle = '#fff'; x.fillText(c, cx, y2);
+  const dg = x.createLinearGradient(X + W * .08, 0, X + W * .92, 0);
+  ['#c3cf3a', '#3fb6d6', '#7fc24a', '#d9da4a', '#9ad0c8'].forEach((col, i) => dg.addColorStop(i / 4, col));
+  x.fillStyle = dg; x.fillRect(X + W * .08, Y + H * .84, W * .84, H * .2);
+  x.strokeStyle = 'rgba(255,255,255,.85)'; x.lineWidth = Math.max(1.5, W * .005); x.beginPath(); x.moveTo(X + W * .78, Y + H * .97); x.quadraticCurveTo(X + W * .82, Y + H * .87, X + W * .9, Y + H * .86); x.stroke();
+  x.textAlign = 'left';
+}
 function texteCiel() {
   return toileTexte(256, 205, (x, w, h) => {
     const d = x.createLinearGradient(0, 0, 0, h); d.addColorStop(0, '#0c1630'); d.addColorStop(1, '#2a3558'); x.fillStyle = d; x.fillRect(0, 0, w, h);
@@ -232,13 +274,13 @@ function texteCiel() {
 }
 
 const FORMES = {
-  // Onsenbranle : le bureau en double écran, l'écran allumé sur le blog, et le MacBook (fond d'écran : Sunny, de Taiyō Matsumoto)
+  // Onsenbranle : le bureau, et dessus le MacBook ; le blog est ouvert, le fond d'écran c'est Sunny (Taiyō Matsumoto)
   ordi(g, { M, boite }) {
     const bois = M('#6b4a32', { roughness: .7 }), metal = M('#2b2b2e', { roughness: .4, metalness: .3 });
     boite(1.7, .06, .8, bois, 0, .76, 0, g);
     [[-.8, -.35], [.8, -.35], [-.8, .35], [.8, .35]].forEach(([x, z]) => boite(.06, .76, .06, bois, x, .38, z, g));
-    // le MacBook, ouvert à droite de l'écran, un peu tourné vers la chaise
-    const mac = new THREE.Group(); mac.position.set(.43, .79, .03); mac.rotation.y = -.35; g.add(mac);
+    // le MacBook, au milieu du bureau
+    const mac = new THREE.Group(); mac.position.set(-.04, .79, .01); mac.rotation.y = .06; mac.scale.setScalar(1.2); g.add(mac);
     const alu = M('#c3c6cc', { roughness: .35, metalness: .45, flatShading: false });
     boite(.46, .016, .32, alu, 0, .008, 0, mac);
     boite(.39, .003, .13, M('#1c1c1f', { roughness: .6 }), 0, .017, -.045, mac);       // le clavier
@@ -247,32 +289,34 @@ const FORMES = {
     boite(.46, .3, .008, alu, 0, .15, -.004, capot);
     const cadreNoir = new THREE.Mesh(new THREE.PlaneGeometry(.448, .29), new THREE.MeshBasicMaterial({ color: '#0d0d0f' }));
     cadreNoir.position.set(0, .152, .001); capot.add(cadreNoir);
-    const fond = new THREE.MeshBasicMaterial({ color: '#16161a', toneMapped: false });
-    new THREE.TextureLoader().load('img/fond-sunny.jpg', tex => {
-      tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-      fond.map = tex; fond.color.set('#ebebeb'); fond.needsUpdate = true;
-    });
-    const ecranMac = new THREE.Mesh(new THREE.PlaneGeometry(.416, .26), fond);
+    // l'écran : le bureau du Mac (Sunny en fond), la barre des menus, le Dock, et onsenbranle.fr dans une fenêtre
+    const fondEcran = new Image(); fondEcran.src = 'img/fond-sunny.jpg';
+    const bureauMac = (x, w, h) => {
+      x.fillStyle = '#d9c39a'; x.fillRect(0, 0, w, h);
+      if (fondEcran.complete && fondEcran.naturalWidth) x.drawImage(fondEcran, 0, 0, w, h);
+      x.fillStyle = 'rgba(244,240,232,.72)'; x.fillRect(0, 0, w, 20);
+      x.fillStyle = '#1d1c1a'; x.font = '600 12px "Helvetica Neue", Helvetica, Arial, sans-serif'; x.fillText('Safari', 16, 14);
+      x.font = '400 12px "Helvetica Neue", Helvetica, Arial, sans-serif'; x.fillText('Fichier    Édition    Présentation    Historique    Fenêtre', 66, 14);
+      // le Dock
+      x.fillStyle = 'rgba(255,255,255,.38)'; arrondi(x, w / 2 - 150, h - 46, 300, 40, 12); x.fill();
+      ['#3d7bd9', '#e9e4d8', '#4caf50', '#f2b134', '#d94a3d', '#7a5cd6', '#2b2b2e'].forEach((c, i) => { x.fillStyle = c; arrondi(x, w / 2 - 135 + i * 40, h - 40, 30, 30, 8); x.fill(); });
+      // la fenêtre du navigateur
+      const WX = 372, WY = 52, WW = 624, WH = 488;
+      x.save(); x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 26; x.shadowOffsetY = 8;
+      x.fillStyle = '#e9e6e1'; arrondi(x, WX, WY, WW, WH, 10); x.fill(); x.restore();
+      ['#ee5f57', '#f5bd2f', '#5fc53f'].forEach((c, i) => { x.fillStyle = c; x.beginPath(); x.arc(WX + 18 + i * 18, WY + 15, 5.5, 0, 7); x.fill(); });
+      x.fillStyle = '#d6d2cc'; arrondi(x, WX + WW / 2 - 120, WY + 6, 240, 19, 6); x.fill();
+      x.fillStyle = '#3a3836'; x.font = '400 12px "Helvetica Neue", Helvetica, Arial, sans-serif'; x.textAlign = 'center'; x.fillText('onsenbranle.fr', WX + WW / 2, WY + 20); x.textAlign = 'left';
+      x.save(); arrondi(x, WX, WY + 30, WW, WH - 30, 10); x.clip(); dessinerBlog(x, WX, WY + 30, WW, WH - 30); x.restore();
+    };
+    const page = toileTexte(1024, 640, bureauMac);
+    fondEcran.onload = () => { const x = page.image.getContext('2d'); x.clearRect(0, 0, 1024, 640); bureauMac(x, 1024, 640); page.needsUpdate = true; };
+    const ecranMac = new THREE.Mesh(new THREE.PlaneGeometry(.416, .26), new THREE.MeshBasicMaterial({ map: page, toneMapped: false, color: '#ececec' }));
     ecranMac.position.set(0, .157, .002); capot.add(ecranMac);
-    const lueur = new THREE.PointLight('#ffe3b8', .35, 1.1, 1.6); lueur.position.set(0, .16, .18); capot.add(lueur);
-    // l'écran, décalé à gauche
-    const moniteur = new THREE.Group(); moniteur.position.x = -.3; g.add(moniteur);
-    boite(.12, .32, .08, metal, 0, .95, -.15, moniteur); boite(.34, .02, .2, metal, 0, .8, -.15, moniteur);
-    boite(.92, .58, .05, metal, 0, 1.33, -.17, moniteur);
-    const ecran = new THREE.Mesh(new THREE.PlaneGeometry(.84, .5), new THREE.MeshBasicMaterial({ map: toileTexte(512, 305, (x, w, h) => {
-      x.fillStyle = '#f4efe4'; x.fillRect(0, 0, w, h);
-      x.fillStyle = '#1b1a17'; x.fillRect(0, 0, w, 34);
-      x.fillStyle = '#f4efe4'; x.font = '600 17px "EB Garamond", Georgia, serif'; x.fillText('onsenbranle.fr', 16, 23);
-      x.fillStyle = '#1b1a17'; x.font = '700 36px "Cormorant Garamond", Georgia, serif'; x.fillText('En vrai,', 24, 92); x.fillText('on s’en branle', 24, 132);
-      x.fillStyle = '#b8b0a0'; for (let i = 0; i < 6; i++) x.fillRect(24, 160 + i * 20, (i % 3 === 2 ? 260 : 440) * .9, 7);
-      x.fillStyle = '#c8572f'; x.fillRect(24, 148, 60, 4);
-    }) }));
-    ecran.position.set(0, 1.33, -.143); moniteur.add(ecran);
-    // clavier, souris, tasse, carnet
-    boite(.5, .02, .16, M('#e9e4d8'), -.32, .8, .16, g);
-    boite(.07, .02, .1, M('#e9e4d8'), .02, .8, .2, g);
-    const tasse = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .1, 10), M('#c8572f')); tasse.position.set(.74, .84, .27); g.add(tasse);
-    boite(.24, .02, .3, M('#2f4a5a'), -.7, .8, .14, g).rotation.y = .3;
+    const lueur = new THREE.PointLight('#e6e4ff', .4, 1.2, 1.6); lueur.position.set(0, .16, .2); capot.add(lueur);
+    // la tasse, le carnet
+    const tasse = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .1, 10), M('#c8572f')); tasse.position.set(.62, .84, .22); g.add(tasse);
+    boite(.24, .02, .3, M('#2f4a5a'), -.62, .8, .1, g).rotation.y = .3;
     // la lampe de bureau, au fond à droite, penchée sur le MacBook
     const lampe = new THREE.Group(); lampe.position.set(.74, .79, -.3); lampe.rotation.y = Math.PI * 1.15; g.add(lampe);
     const pied = new THREE.Mesh(new THREE.CylinderGeometry(.08, .09, .03, 10), metal); lampe.add(pied);
