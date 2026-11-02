@@ -428,13 +428,7 @@ const FORMES = {
     const nom = new THREE.Mesh(new THREE.PlaneGeometry(.16, .04), new THREE.MeshBasicMaterial({ transparent: true, map: toileTexte(256, 64, (x) => { x.fillStyle = '#f4efe4'; x.font = '700 40px "Inter Tight", Helvetica, Arial, sans-serif'; x.textAlign = 'center'; x.fillText('TALYA', 128, 46); }) }));
     nom.position.set(0, .045, .135); gamelle.add(nom);
     const balle = new THREE.Mesh(new THREE.IcosahedronGeometry(.07, 1), M('#cfe05a')); balle.position.set(-.75, .07, .55); g.add(balle);
-    // la main qui la caresse, et les petits cœurs
-    const main = new THREE.Group(); main.visible = false; g.add(main);
-    const peau = M('#8c5737', { roughness: .65 });
-    const paume = new THREE.Mesh(new THREE.BoxGeometry(.13, .035, .15), peau); main.add(paume);
-    const doigts = new THREE.Mesh(new THREE.BoxGeometry(.12, .03, .09), peau); doigts.position.set(0, -.012, .11); doigts.rotation.x = .35; main.add(doigts);
-    const pouce = new THREE.Mesh(new THREE.BoxGeometry(.03, .025, .07), peau); pouce.position.set(.075, -.01, .02); pouce.rotation.y = -.5; main.add(pouce);
-    const poignet = new THREE.Mesh(new THREE.CylinderGeometry(.045, .05, .14, 8), M('#1f6b47', { roughness: .9 })); poignet.rotation.x = Math.PI / 2; poignet.position.z = -.13; main.add(poignet);
+    // les petits cœurs quand on la caresse (pas de main dessinée : c'est la tienne qui caresse)
     const coeur = toileTexte(64, 64, (x) => {
       x.fillStyle = '#ff6f8e'; x.beginPath(); x.moveTo(32, 54); x.bezierCurveTo(4, 34, 6, 10, 22, 10); x.bezierCurveTo(28, 10, 31, 14, 32, 18);
       x.bezierCurveTo(33, 14, 36, 10, 42, 10); x.bezierCurveTo(58, 10, 60, 34, 32, 54); x.fill();
@@ -456,8 +450,6 @@ const FORMES = {
         frisson = Math.max(frisson, secousse); frisson = Math.max(0, frisson - dt * 3);
         const v = Math.sin(temps * 40) * frisson * .3; oreilles[0].rotation.x = v + c * .6; oreilles[1].rotation.x = -v + c * .6;   // les oreilles en arrière
         queue.rotation.y = Math.sin(temps * (4 + eveil * 8 + c * 10)) * (.15 + eveil * .45 + c * .35);
-        main.visible = c > .02;
-        if (main.visible) { main.position.set(-.06 + Math.sin(caresse * 6) * .14, .45 + Math.abs(Math.cos(caresse * 6)) * .02, -.04); main.rotation.set(0, Math.PI / 2, Math.sin(caresse * 6) * .1); main.scale.setScalar(Math.max(.01, c) * 1.35); }   // la main passe et repasse sur son dos
         // les cœurs montent et s'effacent
         coeurs.forEach((sp, i) => {
           const a = caresse - i * .35;
