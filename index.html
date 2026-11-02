@@ -60,6 +60,7 @@
     .fiche.visible { opacity: 1; transform: none; pointer-events: auto; }
     .fiche .num { color: var(--accent); }
     .fiche h2 { margin: 0; font: 600 clamp(2.2rem, 5.4vw, 4.2rem)/1 "Cormorant Garamond", Georgia, serif; letter-spacing: -.015em; text-shadow: 0 2px 30px rgba(0,0,0,.9); }
+    .fiche .fiche-astuce { font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); opacity: 1; }
     .fiche p { margin: 0; font-style: italic; font-size: clamp(18px, 2vw, 22px); color: var(--os); opacity: .82; text-shadow: 0 1px 14px rgba(0,0,0,.9); }
     .entrer { justify-self: start; margin-top: 12px; display: inline-flex; align-items: center; gap: 12px; padding: 13px 20px; border: 1px solid var(--accent); background: rgba(13,12,10,.6); color: var(--os); text-decoration: none; }
     .entrer::after { content: "→"; font-family: "IBM Plex Mono", monospace; color: var(--accent); transition: transform .25s; }
@@ -142,6 +143,7 @@
       <span class="num mono" id="fiche-num"></span>
       <h2 id="fiche-titre"></h2>
       <p id="fiche-legende"></p>
+      <p class="fiche-astuce mono" id="fiche-astuce" hidden></p>
       <a class="entrer mono" id="fiche-lien" href="#">Entrer</a>
     </section>
     <ol class="sommaire" id="sommaire" aria-label="Les créations"></ol>
@@ -234,7 +236,18 @@
     addEventListener('pointerdown', () => { if (sonActif) { preparerSon(); audio.c.resume(); majSon(); } }, { once: true });
 
     /* la fiche de l'étape en cours */
-    function afficher(k, { touche, entrer } = {}) {
+    // une caresse à Talya : deux petites notes joyeuses
+    function ronron() {
+      if (!sonActif || !audio) return;
+      const { c } = audio, t = c.currentTime;
+      [659.3, 880].forEach((f, i) => {
+        const o = c.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t + i * .14); o.frequency.exponentialRampToValueAtTime(f * 1.06, t + i * .14 + .12);
+        const g = c.createGain(); g.gain.setValueAtTime(0, t + i * .14); g.gain.linearRampToValueAtTime(.07, t + i * .14 + .02); g.gain.exponentialRampToValueAtTime(.0001, t + i * .14 + .5);
+        o.connect(g); g.connect(c.destination); o.start(t + i * .14); o.stop(t + i * .14 + .55);
+      });
+    }
+    function afficher(k, { touche, entrer, caresse } = {}) {
+      if (caresse) { ronron(); return; }
       if (entrer) { const l = $('#fiche-lien'); if (ETAPES[k] && ETAPES[k].lien) { entrerDans(ETAPES[k].lien); } else note(k, true); return; }
       document.body.classList.toggle('en-route', k > 0);
       document.querySelectorAll('[data-aller]').forEach(b => b.setAttribute('aria-current', String(+b.dataset.aller === k && k > 0)));
@@ -250,6 +263,9 @@
         $('#fiche-num').textContent = `${String(k).padStart(2, '0')} / ${String(ETAPES.length - 1).padStart(2, '0')}`;
         $('#fiche-titre').textContent = e.titre;
         $('#fiche-legende').textContent = e.legende;
+        const astuce = $('#fiche-astuce');
+        astuce.hidden = e.forme !== 'talya';
+        astuce.textContent = matchMedia('(hover: none)').matches ? 'Touche Talya pour la caresser' : 'Clique sur Talya pour la caresser';
         const l = $('#fiche-lien');
         if (e.lien) { l.href = e.lien; l.textContent = 'Entrer'; l.classList.remove('ferme'); l.removeAttribute('aria-disabled'); }
         else { l.removeAttribute('href'); l.textContent = k === ETAPES.length - 1 ? 'Bientôt' : 'Pas encore ouvert'; l.classList.add('ferme'); l.setAttribute('aria-disabled', 'true'); }

@@ -97,7 +97,7 @@ export function demarrer({ toile, etapes, surEtape, reduit }) {
     const reflet = new THREE.PointLight(e.couleur, 0, 3.2, 1.5); reflet.position.set(0, 1.9, 1.1); g.add(reflet);
     const o = FORMES[e.forme](g, { M, boite });
     g.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-    objets.push({ k, g, place, reflet, anime: o.anime || (() => {}), eveil: 0, secousse: 0 });
+    objets.push({ k, g, place, reflet, anime: o.anime || (() => {}), caresser: o.caresser || null, eveil: 0, secousse: 0 });
   });
   // les objets qui ne sont pas (ou plus) une étape restent dans la pièce, en décor
   // (ex. l'ordi allumé sur onsenbranle.fr, sorti de la sélection principale)
@@ -149,7 +149,8 @@ export function demarrer({ toile, etapes, surEtape, reduit }) {
   toile.addEventListener('touchend', () => { if (doigt && doigt.bouge) aller(Math.round(cibleT)); doigt = null; });
   addEventListener('pointermove', e => souris.set(e.clientX / innerWidth - .5, .5 - e.clientY / innerHeight));
 
-  // cliquer sur un objet : on y va ; s'il est déjà devant nous, on entre
+  // cliquer sur un objet : on y va ; s'il est déjà devant nous, on entre.
+  // Talya, elle, on la caresse (son jeu reste derrière le bouton « Entrer »)
   const lancer = new THREE.Raycaster();
   const touche = (x, y) => {
     lancer.setFromCamera(new THREE.Vector2(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
@@ -159,6 +160,7 @@ export function demarrer({ toile, etapes, surEtape, reduit }) {
   };
   toile.addEventListener('click', e => {
     const o = touche(e.clientX, e.clientY); if (!o) return;
+    if (o.caresser) { if (Math.round(t) !== o.k) aller(o.k); o.caresser(); surEtape(o.k, { caresse: true }); return; }
     if (Math.round(t) !== o.k) { aller(o.k); return; }
     o.secousse = 1; surEtape(o.k, { entrer: true });
   });
@@ -359,16 +361,45 @@ const FORMES = {
     const nom = new THREE.Mesh(new THREE.PlaneGeometry(.16, .04), new THREE.MeshBasicMaterial({ transparent: true, map: toileTexte(256, 64, (x) => { x.fillStyle = '#f4efe4'; x.font = '700 40px "Inter Tight", Helvetica, Arial, sans-serif'; x.textAlign = 'center'; x.fillText('TALYA', 128, 46); }) }));
     nom.position.set(0, .045, .135); gamelle.add(nom);
     const balle = new THREE.Mesh(new THREE.IcosahedronGeometry(.07, 1), M('#cfe05a')); balle.position.set(-.75, .07, .55); g.add(balle);
-    let frisson = 0;
+    // la main qui la caresse, et les petits cœurs
+    const main = new THREE.Group(); main.visible = false; g.add(main);
+    const peau = M('#8c5737', { roughness: .65 });
+    const paume = new THREE.Mesh(new THREE.BoxGeometry(.13, .035, .15), peau); main.add(paume);
+    const doigts = new THREE.Mesh(new THREE.BoxGeometry(.12, .03, .09), peau); doigts.position.set(0, -.012, .11); doigts.rotation.x = .35; main.add(doigts);
+    const pouce = new THREE.Mesh(new THREE.BoxGeometry(.03, .025, .07), peau); pouce.position.set(.075, -.01, .02); pouce.rotation.y = -.5; main.add(pouce);
+    const poignet = new THREE.Mesh(new THREE.CylinderGeometry(.045, .05, .14, 8), M('#1f6b47', { roughness: .9 })); poignet.rotation.x = Math.PI / 2; poignet.position.z = -.13; main.add(poignet);
+    const coeur = toileTexte(64, 64, (x) => {
+      x.fillStyle = '#ff6f8e'; x.beginPath(); x.moveTo(32, 54); x.bezierCurveTo(4, 34, 6, 10, 22, 10); x.bezierCurveTo(28, 10, 31, 14, 32, 18);
+      x.bezierCurveTo(33, 14, 36, 10, 42, 10); x.bezierCurveTo(58, 10, 60, 34, 32, 54); x.fill();
+    });
+    const coeurs = Array.from({ length: 5 }, (_, i) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: coeur, transparent: true, depthWrite: false })); sp.visible = false; g.add(sp); return sp; });
+    let frisson = 0, caresse = 99;
     return {
+      caresser() { caresse = 0; },
       anime(temps, eveil, secousse, dt) {
+        caresse += dt;
+        const c = caresse < 3 ? Math.min(1, caresse * 4, (3 - caresse) * 2) : 0;   // 0 → 1 → 0 sur trois secondes
         corps.scale.y = .55 + Math.sin(temps * 1.6) * .015;                       // elle respire
-        tete.rotation.x = -.15 + eveil * -.2 + Math.sin(temps * .7) * .03;          // elle relève la tête quand on arrive
-        tete.position.y = .38 + eveil * .08;
+        corps.rotation.z = c * Math.sin(temps * 9) * .04;                          // elle se tortille de plaisir
+        tete.rotation.x = -.15 + eveil * -.2 + Math.sin(temps * .7) * .03 - c * .25;   // elle relève la tête quand on arrive, et vers la main
+        tete.rotation.z = c * Math.sin(temps * 5) * .12;
+        tete.position.y = .38 + eveil * .08 + c * .05;
+        oeil.scale.y = c > .3 ? .15 : 1;                                            // l'œil se ferme, contente
         if (Math.random() < dt * .3) frisson = 1;
         frisson = Math.max(frisson, secousse); frisson = Math.max(0, frisson - dt * 3);
-        const v = Math.sin(temps * 40) * frisson * .3; oreilles[0].rotation.x = v; oreilles[1].rotation.x = -v;
-        queue.rotation.y = Math.sin(temps * (4 + eveil * 8)) * (.15 + eveil * .45);
+        const v = Math.sin(temps * 40) * frisson * .3; oreilles[0].rotation.x = v + c * .6; oreilles[1].rotation.x = -v + c * .6;   // les oreilles en arrière
+        queue.rotation.y = Math.sin(temps * (4 + eveil * 8 + c * 10)) * (.15 + eveil * .45 + c * .35);
+        main.visible = c > .02;
+        if (main.visible) { main.position.set(-.06 + Math.sin(caresse * 6) * .14, .45 + Math.abs(Math.cos(caresse * 6)) * .02, -.04); main.rotation.set(0, Math.PI / 2, Math.sin(caresse * 6) * .1); main.scale.setScalar(Math.max(.01, c) * 1.35); }   // la main passe et repasse sur son dos
+        // les cœurs montent et s'effacent
+        coeurs.forEach((sp, i) => {
+          const a = caresse - i * .35;
+          sp.visible = a > 0 && a < 1.8;
+          if (!sp.visible) return;
+          sp.position.set(.14 + Math.sin(i * 2.3) * .2, .7 + a * .45, .2 + Math.cos(i * 1.7) * .12);
+          const s = .12 + Math.sin(Math.min(1, a * 3) * Math.PI / 2) * .06; sp.scale.set(s, s, 1);
+          sp.material.opacity = Math.min(1, (1.8 - a) * 1.5);
+        });
       },
     };
   },
