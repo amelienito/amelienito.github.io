@@ -26,9 +26,11 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
 
   /* ─────────── moteur ─────────── */
   const rendu = new THREE.WebGLRenderer({ canvas: toile, antialias: true, preserveDrawingBuffer: !!cliche });
-  rendu.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  const tactile = matchMedia('(pointer: coarse)').matches;
+  let qualite = 1;   // baisse toute seule si les images arrivent trop espacées (voir la boucle)
   rendu.shadowMap.enabled = true;
   rendu.shadowMap.type = THREE.PCFShadowMap;
+  rendu.shadowMap.autoUpdate = false;   // recalculées ~30 fois par seconde (voir la boucle)
   rendu.toneMapping = THREE.ACESFilmicToneMapping;
   rendu.toneMappingExposure = 1.05;
   const scene = new THREE.Scene();
@@ -39,8 +41,11 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   let tw = 0, th = 0;
   function taille() {
     const w = toile.clientWidth || innerWidth, h = toile.clientHeight || innerHeight;
-    if (!w || !h || (w === tw && h === th)) return;
+    if (!w || !h || (w === tw && h === th && !taille.force)) return;
+    taille.force = false;
     tw = w; th = h;
+    // un écran Retina en plein écran, c'est 5 millions de pixels : on en calcule au plus ~2,3 (1,5 sur téléphone), le reste ne se voit pas
+    rendu.setPixelRatio(Math.max(.75, Math.min(devicePixelRatio || 1, 2, Math.sqrt((tactile ? 1.5e6 : 2.3e6) / (w * h))) * qualite));
     rendu.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = w / h < 0.8 ? 66 : 50;
@@ -104,6 +109,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     // un peu de lumière propre, sinon le haut des murs les avale
     chargeur.load(url, tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; mat.map = mat.emissiveMap = tex; mat.color.set('#ffffff'); mat.emissive.set('#ffffff'); mat.emissiveIntensity = .42; mat.needsUpdate = true; });
     const image = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); image.position.z = epais / 2 + .001; image.receiveShadow = true; g.add(image);
+    image.userData.garder = true;   // son image arrive plus tard : on ne la fusionne pas
   }
   tableau('img/murs/chief-keef.jpg', 1.0, .749, 1.9, 1.54, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .05, dore: true });   // Chief Keef au jardin d'Éden, au-dessus de la platine
   tableau('img/murs/koi.jpg', .66, .66, -2.6, 2.06, -4.18, 0, { cadre: '#e9e1cf', bord: .05 });                                     // la carpe géante, au-dessus du bureau
@@ -111,6 +117,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   tableau('img/murs/evil-dead-2.jpg', .56, .868, 4.99, 1.72, -2.85, -Math.PI / 2, { cadre: '#0e0d0c' });                           // Evil Dead 2, entre la plante et le cabinet de curiosités
 
   meubler(scene, { M, boite });
+  fusionnerDecor(scene);   // (avant d'ajouter les créations : elles, elles bougent)
 
   /* ─────────── les créations ─────────── */
   const objets = [];
@@ -149,7 +156,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     const base = new THREE.Vector3(...p.pos);
     return { pos: base.clone().addScaledVector(n, recul).setY(oeil), regard: base.clone().setY(regard) };
   });
-  const regard = new THREE.Vector3();
+  const regard = new THREE.Vector3(), _vers = new THREE.Vector3();
   function placer(temps) {
     const k = Math.floor(t), f = t - k, b = Math.min(N - 1, k + 1);
     const l = f * f * (3 - 2 * f);
@@ -157,7 +164,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     const recul = Math.sin(l * Math.PI) * .35;
     camera.position.lerpVectors(vues[k].pos, vues[b].pos, l);
     regard.lerpVectors(vues[k].regard, vues[b].regard, l);
-    const vers = camera.position.clone().sub(regard).setY(0).normalize();
+    const vers = _vers.copy(camera.position).sub(regard).setY(0).normalize();   // (un seul vecteur réutilisé : pas de déchets à chaque image)
     camera.position.addScaledVector(vers, recul * 2).y += recul;
     camera.position.x += souris.x * .18; camera.position.y += souris.y * .1 + Math.sin(temps * .6) * .015;
     camera.lookAt(regard);
@@ -203,14 +210,25 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   });
 
   /* ─────────── la boucle ─────────── */
-  let avant = performance.now(), temps = 0, derniere = -1, enPause = false, flash = 0, verifTaille = 0;
+  let avant = performance.now(), temps = 0, derniere = -1, enPause = false, flash = 0, verifTaille = 0, derniereOmbre = 0;
+  // si l'appareil n'arrive plus à suivre, la pièce calcule moins de pixels ; s'il a de la marge longtemps, elle remonte
+  let mesures = [], precedente = 0, aise = 0;
+  function suivreFluidite(ms) {
+    const d = ms - precedente; precedente = ms;
+    if (d <= 0 || d > 250 || document.hidden) { mesures.length = 0; return; }
+    mesures.push(d); if (mesures.length < 90) return;
+    mesures.sort((a, b) => a - b); const med = mesures[45], rapides = mesures[9]; mesures.length = 0;
+    // (un appareil bridé à 30 images par seconde donne des images régulières : ce n'est pas une saccade)
+    if ((med > 40 || (med > 21 && rapides < 26)) && qualite > .55) { qualite = Math.max(.55, qualite - .15); aise = 0; taille.force = true; taille(); }
+    else if (med < 15.5 && qualite < 1 && ++aise >= 4) { qualite = Math.min(1, qualite + .1); aise = 0; taille.force = true; taille(); }
+  }
   const voile = document.createElement('div');
   voile.style.cssText = 'position:fixed;inset:0;pointer-events:none;background:#fff4e0;opacity:0;transition:opacity .35s';
   document.body.appendChild(voile);
   function image() {
     if (enPause) return;
     const m = performance.now(), dt = Math.min(.05, (m - avant) / 1000); avant = m; temps += dt;
-    t += (cibleT - t) * (reduit ? 1 : 1 - Math.pow(.002, dt));
+    t += (cibleT - t) * (reduit ? 1 : 1 - Math.pow(.004, dt));   // un glissé un peu plus long, plus doux
     if (Math.abs(cibleT - t) < .0005) t = cibleT;
     if (++verifTaille % 30 === 0) taille();   // filet de sécurité : deux fois par seconde, on revérifie la taille
     placer(temps);
@@ -228,8 +246,9 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
       const vise = survol === o ? 1 : o.eveil ? o.eveil * .35 : 0;
       o.selection.force.value += (vise - o.selection.force.value) * (reduit ? 1 : Math.min(1, dt * 12));
     }
+    if (m - derniereOmbre > 30 || cliche) { derniereOmbre = m; rendu.shadowMap.needsUpdate = true; }
     rendu.render(scene, camera);
-    if (!cliche) requestAnimationFrame(image);
+    if (!cliche) { suivreFluidite(m); requestAnimationFrame(image); }
   }
   if (cliche) { for (let i = 0; i < 30; i++) { t = cibleT; image(); } document.body.dataset.pret = '1'; }
   else requestAnimationFrame(image);
@@ -460,6 +479,33 @@ function meubler(scene, { M, boite }) {
   feuille.position.z = .021; aff.add(feuille);
 }
 
+/* ═══════════════ le décor fusionné ═══════════════
+   Chaque boîte du décor (lames de parquet, planches, CD posés à plat, pieds de table…) était dessinée à part,
+   trois fois par image avec les ombres. Ici, tout ce qui ne bouge pas et se ressemble (même couleur, même matière)
+   devient un seul objet. Ce qui a une image (tableaux, écrans), ce qui est transparent ou en série (InstancedMesh) reste à part. */
+function fusionnerDecor(racine) {
+  racine.updateMatrixWorld(true);
+  const lots = new Map(), morts = [];
+  const cleDe = m => [m.type, m.color.getHexString(), m.emissive ? m.emissive.getHexString() + m.emissiveIntensity : '', m.roughness, m.metalness, m.flatShading, m.side].join('|');
+  racine.traverse(o => {
+    if (!o.isMesh || o.isInstancedMesh || o.userData.garder || Array.isArray(o.material)) return;
+    const m = o.material;
+    if (!m.isMeshStandardMaterial || m.map || m.transparent || m.vertexColors || m.userData.garder) return;
+    const g = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(o.matrixWorld);
+    const cle = cleDe(m) + (o.castShadow ? '+' : '-') + (o.receiveShadow ? '+' : '-');
+    if (!lots.has(cle)) lots.set(cle, { mat: m, geos: [], ombre: o.castShadow, recoit: o.receiveShadow });
+    lots.get(cle).geos.push(g); morts.push(o);
+  });
+  morts.forEach(o => o.parent.remove(o));
+  lots.forEach(({ mat, geos, ombre, recoit }) => {
+    let n = 0; geos.forEach(x => { n += x.attributes.position.count; });
+    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3); let k = 0;
+    geos.forEach(x => { pos.set(x.attributes.position.array, k * 3); nor.set(x.attributes.normal.array, k * 3); k += x.attributes.position.count; x.dispose(); });
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); geo.computeBoundingSphere();
+    const mesh = new THREE.Mesh(geo, mat); mesh.castShadow = ombre; mesh.receiveShadow = recoit; racine.add(mesh);
+  });
+}
+
 /* ═══════════════ la sélection d'un objet, dessinée par ses matériaux ═══════════════
    Pas de lampe : un liseré de la couleur de la création sur le contour de l'objet (effet de Fresnel),
    et un léger voile sur ses faces. Une seule petite addition dans le shader de chaque matériau :
@@ -576,7 +622,6 @@ const FORMES = {
     fondEcran.onload = () => { const x = page.image.getContext('2d'); x.clearRect(0, 0, 1024, 640); bureauMac(x, 1024, 640); page.needsUpdate = true; };
     const ecranMac = new THREE.Mesh(new THREE.PlaneGeometry(.416, .26), new THREE.MeshBasicMaterial({ map: page, toneMapped: false, color: '#ececec' }));
     ecranMac.position.set(0, .157, .002); capot.add(ecranMac);
-    const lueur = new THREE.PointLight('#e6e4ff', .4, 1.2, 1.6); lueur.position.set(0, .16, .2); capot.add(lueur);
     // la tasse, le carnet
     const tasse = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .1, 10), M('#c8572f')); tasse.position.set(.62, .84, .22); g.add(tasse);
     boite(.24, .02, .3, M('#2f4a5a'), -.62, .8, .1, g).rotation.y = .3;
