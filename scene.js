@@ -20,7 +20,7 @@ const PLACES = {
   carton:     { pos: [-1.6, 0, 2.3],   face: .5,           vue: [2.2, 1.45, .35] },
 };
 
-export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {}, depart = 0, bloque = () => false, surBloque = () => {}, surPret = () => {} }) {
+export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {}, surApproche = () => {}, depart = 0, bloque = () => false, surBloque = () => {}, surPret = () => {} }) {
   const N = etapes.length;
   const cliche = new URLSearchParams(location.search).get('cliche');
 
@@ -102,23 +102,28 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   }
   // aux murs : ses images, encadrées
   const chargeur = new THREE.TextureLoader();
-  function tableau(url, w, h, x, y, z, ry, { cadre = '#1d1b19', bord = .035, epais = .03, dore = false } = {}) {
+  function tableau(url, w, h, x, y, z, ry, { cadre = '#1d1b19', bord = .05, epais = .045, dore = false, marge = .055, passe = '#f3eee2' } = {}) {
     const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g);
-    const c = boite(w + bord * 2, h + bord * 2, epais, M(cadre, dore ? { metalness: .55, roughness: .38, flatShading: false } : { roughness: .6 }), 0, 0, 0, g);
-    c.castShadow = false;
+    // la baguette : un cadre épais aux angles, qui dépasse du mur ; dedans un passe-partout crème ; puis l'image, un peu en retrait
+    const matCadre = M(cadre, dore ? { metalness: .55, roughness: .38, flatShading: false } : { roughness: .55, flatShading: false });
+    const W = w + 2 * (marge + bord), H = h + 2 * (marge + bord);
+    [[W, bord, 0, (H - bord) / 2], [W, bord, 0, -(H - bord) / 2], [bord, H - 2 * bord, -(W - bord) / 2, 0], [bord, H - 2 * bord, (W - bord) / 2, 0]].forEach(([a, b, px, py]) => { boite(a, b, epais, matCadre, px, py, epais / 2, g).castShadow = true; });
+    if (marge > 0) boite(w + 2 * marge, h + 2 * marge, .01, M(passe, { roughness: .95 }), 0, 0, .006, g).castShadow = false;
+    else boite(w, h, .01, M('#1a1714'), 0, 0, .006, g).castShadow = false;
+    const epaisImage = .012;
     const mat = new THREE.MeshStandardMaterial({ color: '#2a2622', roughness: .85 });
     // un peu de lumière propre, sinon le haut des murs les avale
     chargeur.load(url, tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; mat.map = mat.emissiveMap = tex; mat.color.set('#ffffff'); mat.emissive.set('#ffffff'); mat.emissiveIntensity = .42; mat.needsUpdate = true; });
-    const image = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); image.position.z = epais / 2 + .001; image.receiveShadow = true; g.add(image);
+    const image = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); image.position.z = epaisImage; image.receiveShadow = true; g.add(image);
     image.userData.garder = true;   // son image arrive plus tard : on ne la fusionne pas
   }
-  tableau('img/murs/chief-keef.jpg', 1.0, .749, 1.9, 1.54, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .05, dore: true });   // Chief Keef au jardin d'Éden, au-dessus de la platine
-  tableau('img/murs/koi.jpg', .66, .66, -2.6, 2.06, -4.18, 0, { cadre: '#e9e1cf', bord: .05 });                                     // la carpe géante, au-dessus du bureau
-  tableau('img/murs/i-love-ugly.jpg', .96, .642, -4.99, 1.86, .62, Math.PI / 2);                                                   // I Love Ugly (Chester Watson), entre le globe et la cible
-  tableau('img/murs/evil-dead-2.jpg', .56, .868, 4.99, 1.72, -2.85, -Math.PI / 2, { cadre: '#0e0d0c' });                           // Evil Dead 2, entre la plante et le pupitre de quiz
+  tableau('img/murs/chief-keef.jpg', 1.0, .749, 1.9, 1.54, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .06, dore: true, marge: .06 });   // Chief Keef au jardin d'Éden, au-dessus de la platine
+  tableau('img/murs/koi.jpg', .66, .66, -2.6, 2.06, -4.18, 0, { cadre: '#5a3820', bord: .05 });                                     // la carpe géante, au-dessus du bureau
+  tableau('img/murs/i-love-ugly.jpg', .96, .642, -4.99, 1.86, .62, Math.PI / 2, { cadre: '#161514', bord: .045 });                                                   // I Love Ugly (Chester Watson), entre le globe et la cible
+  tableau('img/murs/evil-dead-2.jpg', .56, .868, 4.99, 1.72, -2.85, -Math.PI / 2, { cadre: '#b8282e', bord: .035, marge: .045 });                           // Evil Dead 2, entre la plante et le pupitre de quiz
 
   meubler(scene, { M, boite });
-  tableau('img/murs/seta.jpg', .8, .8, 4.99, 2.2, 2.85, -Math.PI / 2, { cadre: '#e9e1cf', bord: .05 });   // Seta, au-dessus de la télé
+  tableau('img/murs/seta.jpg', .76, .76, 4.99, 2.2, 2.85, -Math.PI / 2, { cadre: '#b07a48', bord: .05 });   // Seta, au-dessus de la télé
   fusionnerDecor(scene);   // (avant d'ajouter les créations : elles, elles bougent)
 
   /* ─────────── les créations ─────────── */
@@ -143,7 +148,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     g.position.set(...place.pos); g.rotation.y = place.face; scene.add(g);
     FORMES[forme](g, { M, boite });
     g.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-    if (decors[forme]) decorsCliquables.push({ g, decor: decors[forme], selection: surbrillance(g, '#e6dcc2') });
+    if (decors[forme]) decorsCliquables.push({ g, forme, decor: decors[forme], selection: surbrillance(g, '#e6dcc2') });
   }
 
   /* ─────────── la caméra ─────────── */
@@ -168,13 +173,21 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     regard.lerpVectors(vues[k].regard, vues[b].regard, l);
     const vers = _vers.copy(camera.position).sub(regard).setY(0).normalize();   // (un seul vecteur réutilisé : pas de déchets à chaque image)
     camera.position.addScaledVector(vers, recul * 2).y += recul;
+    // l'approche d'un objet caché (l'ordi) : on glisse depuis la vue en cours jusqu'à lui
+    if (melange > .0005 && approche) { const l2 = melange * melange * (3 - 2 * melange); camera.position.lerp(approche.pos, l2); regard.lerp(approche.regard, l2); }
     camera.position.x += souris.x * .18; camera.position.y += souris.y * .1 + Math.sin(temps * .6) * .015;
     camera.lookAt(regard);
   }
+  let approche = null, melange = 0;
+  function vueDe(forme, [recul, oeil, haut]) {
+    const p = PLACES[forme], n = new THREE.Vector3(Math.sin(p.face), 0, Math.cos(p.face)), base = new THREE.Vector3(...p.pos);
+    return { pos: base.clone().addScaledVector(n, recul).setY(oeil), regard: base.clone().setY(haut) };
+  }
+  function quitterApproche() { if (approche && approche.actif) { approche.actif = false; surApproche(null); } }
 
   /* ─────────── les commandes ─────────── */
   let repos = null;
-  const aller = v => { cibleT = Math.max(0, Math.min(N - 1, v)); clearTimeout(repos); repos = setTimeout(() => { cibleT = Math.round(cibleT); }, 160); };
+  const aller = v => { quitterApproche(); cibleT = Math.max(0, Math.min(N - 1, v)); clearTimeout(repos); repos = setTimeout(() => { cibleT = Math.round(cibleT); }, 160); };
   addEventListener('wheel', e => { if (document.body.classList.contains('liste')) return; e.preventDefault(); if (bloque()) { surBloque(); return; } aller(cibleT + Math.max(-.6, Math.min(.6, e.deltaY / 500))); }, { passive: false });
   let doigt = null;
   toile.addEventListener('touchstart', e => { doigt = { y: e.touches[0].clientY, x: e.touches[0].clientX, t0: cibleT, bouge: false }; }, { passive: true });
@@ -199,7 +212,10 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   };
   toile.addEventListener('click', e => {
     const o = touche(e.clientX, e.clientY); if (!o) return;
-    if (o.decor) { surDecor(o.decor); return; }
+    if (o.decor) {
+      if (approche && approche.actif && approche.o === o) { o.secousse = 1; surDecor(o.decor); return; }   // déjà devant : on entre
+      approche = Object.assign(vueDe(o.forme, o.decor.vue || [1.35, 1.48, .98]), { o, actif: true }); surApproche(o.decor); return;
+    }
     if (o.caresser) { if (Math.round(t) !== o.k) aller(o.k); o.caresser(); surEtape(o.k, { caresse: true }); return; }
     if (Math.round(t) !== o.k) { aller(o.k); return; }
     o.secousse = 1; surEtape(o.k, { entrer: true });
@@ -231,6 +247,8 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     if (enPause) return;
     const m = performance.now(), dt = Math.min(.05, (m - avant) / 1000); avant = m; temps += dt;
     t += (cibleT - t) * (reduit ? 1 : 1 - Math.pow(.004, dt));   // un glissé un peu plus long, plus doux
+    melange += ((approche && approche.actif ? 1 : 0) - melange) * (reduit ? 1 : 1 - Math.pow(.006, dt));
+    if (approche && !approche.actif && melange < .0005) approche = null;
     if (Math.abs(cibleT - t) < .0005) t = cibleT;
     if (++verifTaille % 30 === 0) taille();   // filet de sécurité : deux fois par seconde, on revérifie la taille
     placer(temps);
@@ -241,7 +259,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
       o.eveil += (actif - o.eveil) * Math.min(1, dt * 3);
       if (cliche && actif) o.eveil = 1;
       o.secousse = Math.max(0, o.secousse - dt * 1.6);
-      o.anime(temps, o.eveil, o.secousse, dt);
+      o.anime(temps, o.eveil, o.secousse, cliche ? .4 : dt);   // (vignettes : les objets prennent tout de suite leur pose)
     }
     // la sélection : l'objet survolé s'éclaire franchement, celui devant lequel on se trouve à peine ; en douceur (~150 ms)
     for (const o of [...objets, ...decorsCliquables]) {
@@ -254,6 +272,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     if (!cliche) { suivreFluidite(m); requestAnimationFrame(image); }
   }
   if (cliche) {
+    window.__hubDebug = { scene, camera, THREE };   // (pour les vérifications)
     // pour les vignettes : on attend que les tableaux soient chargés avant de déclarer l'image prête
     const fin = () => { for (let i = 0; i < 30; i++) { t = cibleT; image(); } document.body.dataset.pret = '1'; };
     for (let i = 0; i < 30; i++) { t = cibleT; image(); }
@@ -267,6 +286,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     suivant: () => aller(Math.round(cibleT) + 1),
     precedent: () => aller(Math.round(cibleT) - 1),
     actuelle: () => Math.round(cibleT),
+    quitterApproche: () => quitterApproche(),
     eclair: () => { voile.style.opacity = '.85'; setTimeout(() => { voile.style.opacity = '0'; }, 380); },
     pause: p => { enPause = p; if (!p) { avant = performance.now(); requestAnimationFrame(image); } },
   };
@@ -354,48 +374,74 @@ function cylindre(parent, r1, r2, h, n, mat, x, y, z) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, n), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m;
 }
 
-// l'écran de la télé : l'accueil de la PS5 (Jeux · Multimédia, la rangée de jeux, le jeu choisi en grand sur son illustration)
+// l'écran de la télé : l'accueil de la PS5, avec les créations d'Amélien comme jeux. Toutes les 7 secondes,
+// la sélection passe au jeu suivant et son illustration remplit l'écran, comme quand on fait défiler la console.
+const JEUX_CONSOLE = [
+  { titre: 'Cite 3 Chinois', sous: 'Voyons voir si t’es raciste', image: 'img/cite-3-chinois.png', trophees: '12/40', progres: .42 },
+  { titre: 'Fun facts', sous: 'Pour apprendre en s’amusant', image: 'img/fun-facts.png', trophees: '7/25', progres: .28 },
+  { titre: 'RP Talya', sous: 'Joyeux anniversaire Flo', image: 'img/rp-talya.png', trophees: '30/30', progres: 1 },
+  { titre: 'Music Discovery', sous: 'Découvrir de la musique sainement', image: 'img/music-discovery.png', trophees: '18/50', progres: .6 },
+  { titre: 'Raciste ou joueur de fléchettes ?', sous: 'Bientôt', image: 'img/flechettes.png', trophees: '0/12', progres: 0 },
+];
 function ecranConsole() {
-  return toileTexte(1024, 576, (x, w, h) => {
-    const S = '"Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif';
-    const ciel = x.createLinearGradient(0, 0, 0, h); ciel.addColorStop(0, '#1b1440'); ciel.addColorStop(.45, '#7a2f5c'); ciel.addColorStop(.75, '#e2763c'); ciel.addColorStop(1, '#f6c16a');
-    x.fillStyle = ciel; x.fillRect(0, 0, w, h);
-    x.fillStyle = 'rgba(255,214,150,.92)'; x.beginPath(); x.arc(w * .72, h * .6, 74, 0, 7); x.fill();
-    [['#5a2346', .66, 60], ['#321634', .75, 90], ['#170b1d', .86, 120]].forEach(([c, y0, amp], i) => {
-      x.fillStyle = c; x.beginPath(); x.moveTo(0, h);
-      for (let X = 0; X <= w; X += 24) x.lineTo(X, h * y0 - Math.sin(X / (140 + i * 60) + i) * amp * .5 - Math.sin(X / 47 + i * 2) * 8);
-      x.lineTo(w, h); x.fill();
+  const W = 1280, H = 720, S = '"Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif';
+  const images = JEUX_CONSOLE.map(j => { const im = new Image(); im.src = j.image; im.onload = () => dessiner(); return im; });
+  let sel = 0, tex = null;
+  const pret = im => im.complete && im.naturalWidth;
+  function couvrir(x, im, X, Y, w, h) {   // l'image remplit le cadre, recadrée au centre
+    const r = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * r, ih = im.naturalHeight * r;
+    x.drawImage(im, X + (w - iw) / 2, Y + (h - ih) / 2, iw, ih);
+  }
+  function dessin(x, w, h) {
+    const j = JEUX_CONSOLE[sel], im = images[sel];
+    x.fillStyle = '#0b0d1c'; x.fillRect(0, 0, w, h);
+    if (im && pret(im)) { x.save(); x.globalAlpha = .95; couvrir(x, im, 0, 0, w, h); x.restore(); }
+    // des voiles pour lire : à gauche, en haut, en bas ; et un léger vignetage
+    const g1 = x.createLinearGradient(0, 0, w * .75, 0); g1.addColorStop(0, 'rgba(6,8,20,.92)'); g1.addColorStop(.55, 'rgba(6,8,20,.45)'); g1.addColorStop(1, 'rgba(6,8,20,0)'); x.fillStyle = g1; x.fillRect(0, 0, w, h);
+    const g2 = x.createLinearGradient(0, 0, 0, 240); g2.addColorStop(0, 'rgba(6,8,20,.85)'); g2.addColorStop(1, 'rgba(6,8,20,0)'); x.fillStyle = g2; x.fillRect(0, 0, w, 240);
+    const g3 = x.createLinearGradient(0, h - 200, 0, h); g3.addColorStop(0, 'rgba(6,8,20,0)'); g3.addColorStop(1, 'rgba(6,8,20,.8)'); x.fillStyle = g3; x.fillRect(0, h - 200, w, 200);
+    // la barre du haut
+    x.fillStyle = '#fff'; x.font = `700 26px ${S}`; x.fillText('Jeux', 72, 62); x.globalAlpha = .5; x.fillText('Multimédia', 146, 62); x.globalAlpha = 1;
+    x.fillStyle = '#fff'; x.fillRect(72, 74, 54, 3);
+    x.strokeStyle = '#fff'; x.lineWidth = 2.8;
+    x.beginPath(); x.arc(w - 300, 54, 11, 0, 7); x.moveTo(w - 292, 62); x.lineTo(w - 283, 71); x.stroke();
+    x.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; x.moveTo(w - 240 + Math.cos(a) * 8, 54 + Math.sin(a) * 8); x.lineTo(w - 240 + Math.cos(a) * 13, 54 + Math.sin(a) * 13); } x.stroke(); x.beginPath(); x.arc(w - 240, 54, 6, 0, 7); x.stroke();
+    x.fillStyle = '#c8572f'; x.beginPath(); x.arc(w - 182, 54, 17, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = `800 16px ${S}`; x.textAlign = 'center'; x.fillText('A', w - 182, 60);
+    x.font = `600 24px ${S}`; x.textAlign = 'right'; x.fillText('21:04', w - 72, 63); x.textAlign = 'left';
+    // la rangée : la bibliothèque, les jeux (le sélectionné en grand, cadre blanc, et son nom dessous), le Store
+    let X = 72;
+    const tuile = (T, Y, fond, contenu, choisi) => {
+      x.save(); if (choisi) { x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 28; x.shadowOffsetY = 10; }
+      arrondi(x, X, Y, T, T, 14); x.fillStyle = fond; x.fill(); x.restore();
+      x.save(); arrondi(x, X, Y, T, T, 14); x.clip(); contenu(X, Y, T); x.restore();
+      if (choisi) { x.strokeStyle = '#fff'; x.lineWidth = 4; arrondi(x, X - 7, Y - 7, T + 14, T + 14, 19); x.stroke(); }
+    };
+    tuile(104, 112, 'rgba(40,44,58,.92)', (a, b, T) => { x.fillStyle = 'rgba(255,255,255,.9)'; for (let k = 0; k < 3; k++) { arrondi(x, a + 30 + k * 16, b + 30, 10, 44, 3); x.fill(); } }, false); X += 104 + 18;
+    JEUX_CONSOLE.forEach((jj, k) => {
+      const choisi = k === sel, T = choisi ? 150 : 104, Y = choisi ? 92 : 112;
+      tuile(T, Y, '#20263a', (a, b, t) => { if (pret(images[k])) couvrir(x, images[k], a, b, t, t); }, choisi);
+      if (choisi) { x.fillStyle = '#fff'; x.font = `600 18px ${S}`; x.fillText(jj.titre.length > 18 ? jj.titre.slice(0, 17) + '…' : jj.titre, X, Y + T + 34); }
+      X += T + (choisi ? 26 : 18);
     });
-    const voile = x.createLinearGradient(0, 0, w * .72, 0); voile.addColorStop(0, 'rgba(8,10,24,.88)'); voile.addColorStop(1, 'rgba(8,10,24,0)'); x.fillStyle = voile; x.fillRect(0, 0, w, h);
-    const haut = x.createLinearGradient(0, 0, 0, 190); haut.addColorStop(0, 'rgba(8,10,24,.75)'); haut.addColorStop(1, 'rgba(8,10,24,0)'); x.fillStyle = haut; x.fillRect(0, 0, w, 190);
-    x.fillStyle = '#fff'; x.font = `700 22px ${S}`; x.fillText('Jeux', 60, 52); x.globalAlpha = .55; x.fillText('Multimédia', 126, 52); x.globalAlpha = 1;
-    x.strokeStyle = '#fff'; x.lineWidth = 2.5;
-    x.beginPath(); x.arc(w - 250, 44, 9, 0, 7); x.moveTo(w - 243, 51); x.lineTo(w - 235, 59); x.stroke();
-    x.beginPath(); x.arc(w - 200, 46, 9, 0, 7); x.stroke(); x.beginPath(); x.arc(w - 200, 46, 3.5, 0, 7); x.stroke();
-    x.fillStyle = '#c8572f'; x.beginPath(); x.arc(w - 150, 46, 14, 0, 7); x.fill();
-    x.fillStyle = '#fff'; x.font = `600 20px ${S}`; x.textAlign = 'right'; x.fillText('21:04', w - 60, 53); x.textAlign = 'left';
-    const tuiles = [['#2b2f3a', '#16181f', 'biblio'], ['#3f6f8f', '#14293a'], ['#c8572f', '#7b3b2e'], ['#d9a23a', '#8a5a1e'], ['#4f7a46', '#233a22'], ['#6e5a8a', '#2b2140'], ['#1f5fd1', '#0b2f7a', 'store']];
-    let X = 60;
-    tuiles.forEach(([a, b, type], i) => {
-      const sel = i === 1, T = sel ? 128 : 86, Y = sel ? 82 : 92;
-      const gr = x.createLinearGradient(X, Y, X + T, Y + T); gr.addColorStop(0, a); gr.addColorStop(1, b);
-      x.save(); if (sel) { x.shadowColor = 'rgba(255,255,255,.35)'; x.shadowBlur = 22; } x.fillStyle = gr; arrondi(x, X, Y, T, T, 12); x.fill(); x.restore();
-      x.fillStyle = 'rgba(255,255,255,.85)'; x.strokeStyle = '#fff'; x.lineWidth = 3;
-      if (type === 'biblio') { for (let k = 0; k < 3; k++) { arrondi(x, X + 24 + k * 14, Y + 26, 9, 34, 2); x.fill(); } }
-      else if (type === 'store') { arrondi(x, X + 26, Y + 36, 34, 28, 4); x.stroke(); x.beginPath(); x.arc(X + 43, Y + 36, 9, Math.PI, 0); x.stroke(); }
-      else { x.globalAlpha = .3; x.beginPath(); x.arc(X + T * .62, Y + T * .42, T * .22, 0, 7); x.fill(); x.globalAlpha = 1; }
-      if (sel) { x.lineWidth = 3.5; arrondi(x, X - 6, Y - 6, T + 12, T + 12, 16); x.stroke(); }
-      X += T + (sel ? 22 : 14);
-    });
-    x.fillStyle = '#fff'; x.font = `800 48px ${S}`; x.fillText('Cite 3 Chinois', 60, 332);
-    x.font = `500 18px ${S}`; x.globalAlpha = .72; x.fillText('Dernière partie : hier · Trophées 12/40', 60, 364); x.globalAlpha = 1;
-    x.fillStyle = '#fff'; arrondi(x, 60, 392, 150, 50, 25); x.fill();
-    x.fillStyle = '#111'; x.font = `700 21px ${S}`; x.fillText('Jouer', 107, 424);
-    x.fillStyle = 'rgba(255,255,255,.2)'; x.beginPath(); x.arc(250, 417, 25, 0, 7); x.fill();
-    x.fillStyle = '#fff'; [240, 250, 260].forEach(cx => { x.beginPath(); x.arc(cx, 417, 2.6, 0, 7); x.fill(); });
-    x.fillStyle = 'rgba(255,255,255,.25)'; arrondi(x, 60, 474, 280, 6, 3); x.fill(); x.fillStyle = '#fff'; arrondi(x, 60, 474, 118, 6, 3); x.fill();
-    x.font = `500 15px ${S}`; x.globalAlpha = .78; x.fillText('Progression 42 %', 60, 506); x.globalAlpha = 1;
-  });
+    tuile(104, 112, '#1f5fd1', (a, b, T) => { x.strokeStyle = '#fff'; x.lineWidth = 3.5; arrondi(x, a + 34, b + 44, 36, 30, 5); x.stroke(); x.beginPath(); x.arc(a + 52, b + 44, 10, Math.PI, 0); x.stroke(); }, false);
+    // le jeu choisi, en grand
+    x.fillStyle = '#fff'; x.font = `800 ${j.titre.length > 18 ? 46 : 64}px ${S}`; x.fillText(j.titre, 72, 418);
+    x.font = `500 22px ${S}`; x.globalAlpha = .78; x.fillText(j.sous, 72, 456); x.globalAlpha = 1;
+    x.fillStyle = '#fff'; arrondi(x, 72, 486, 180, 58, 29); x.fill();
+    x.fillStyle = '#0b0d1c'; x.font = `700 24px ${S}`; x.textAlign = 'center'; x.fillText('Jouer', 162, 523); x.textAlign = 'left';
+    x.fillStyle = 'rgba(255,255,255,.2)'; x.beginPath(); x.arc(296, 515, 29, 0, 7); x.fill();
+    x.fillStyle = '#fff'; [284, 296, 308].forEach(cx => { x.beginPath(); x.arc(cx, 515, 3, 0, 7); x.fill(); });
+    // la progression et les trophées
+    x.fillStyle = 'rgba(255,255,255,.22)'; arrondi(x, 72, 584, 320, 7, 3.5); x.fill();
+    if (j.progres > 0) { x.fillStyle = '#fff'; arrondi(x, 72, 584, Math.max(8, 320 * j.progres), 7, 3.5); x.fill(); }
+    x.font = `500 18px ${S}`; x.globalAlpha = .8; x.fillText(`Progression ${Math.round(j.progres * 100)} %   ·   Trophées ${j.trophees}`, 72, 622); x.globalAlpha = 1;
+    // en bas à droite : les cartes « activités », en verre dépoli
+    [0, 1, 2].forEach(k => { const cx = w - 72 - 230 * (3 - k) + 10; x.fillStyle = 'rgba(255,255,255,.12)'; arrondi(x, cx, h - 170, 216, 120, 14); x.fill(); x.fillStyle = 'rgba(255,255,255,.75)'; x.font = `600 15px ${S}`; x.fillText(['Reprendre', 'Défi du jour', 'Trophée proche'][k], cx + 18, h - 136); x.fillStyle = 'rgba(255,255,255,.35)'; arrondi(x, cx + 18, h - 112, 120, 8, 4); x.fill(); arrondi(x, cx + 18, h - 94, 80, 8, 4); x.fill(); });
+  }
+  function dessiner() { if (!tex) return; const x = tex.image.getContext('2d'); x.clearRect(0, 0, W, H); dessin(x, W, H); tex.needsUpdate = true; }
+  tex = toileTexte(W, H, dessin);
+  setInterval(() => { if (document.hidden) return; sel = (sel + 1) % JEUX_CONSOLE.length; dessiner(); }, 7000);
+  return tex;
 }
 
 // le cannage des portes du meuble télé (le rotin tressé des années 70)
@@ -419,7 +465,7 @@ function coinTele(g, { M, boite }) {
   // la télé
   boite(.62, .015, .2, noir, 0, .493, -.02, g); boite(.12, .13, .05, noir, 0, .56, -.05, g);
   boite(1.64, .93, .045, noir, 0, 1.1, -.05, g);
-  const ecran = new THREE.Mesh(new THREE.PlaneGeometry(1.56, .87), new THREE.MeshBasicMaterial({ map: ecranConsole(), toneMapped: false, color: '#d0d0d0' }));
+  const ecran = new THREE.Mesh(new THREE.PlaneGeometry(1.56, .87), new THREE.MeshBasicMaterial({ map: ecranConsole(), toneMapped: false, color: '#e2e2e2' }));
   ecran.position.set(0, 1.1, -.0265); g.add(ecran);
   boite(1.2, .07, .1, M('#18181a', { roughness: .8 }), 0, .52, .11, g);                                            // la barre de son
   // la PS5, debout à droite : deux grandes ailes blanches qui s'évasent en haut, le cœur noir, la lueur bleue
@@ -705,7 +751,7 @@ const FORMES = {
     const ampoule = new THREE.PointLight('#ffcf8a', 1.6, 2, 1.5); ampoule.position.set(.2, .38, 0); lampe.add(ampoule);
     // la chaise
     // un fauteuil de bureau rembourré, orange brûlé, sur cinq roulettes : on s'y enfonce pour créer
-    const chaise = new THREE.Group(); chaise.position.set(.1, 0, .8); chaise.rotation.y = .25; g.add(chaise);
+    const chaise = new THREE.Group(); chaise.position.set(.62, 0, .98); chaise.rotation.y = .95; g.add(chaise);   // repoussé de côté, comme si on venait de se lever
     const tissu = M('#d9772b', { roughness: .95, flatShading: false }), fer = M('#232326', { roughness: .4, metalness: .4 });
     for (let i = 0; i < 5; i++) { const a = i * 1.2566; const b = boite(.25, .025, .035, fer, Math.cos(a) * .125, .055, Math.sin(a) * .125, chaise); b.rotation.y = -a; cylindre(chaise, .022, .022, .03, 8, fer, Math.cos(a) * .25, .022, Math.sin(a) * .25).rotation.x = Math.PI / 2; }
     cylindre(chaise, .025, .03, .3, 8, fer, 0, .22, 0);
@@ -775,7 +821,7 @@ const FORMES = {
     };
   },
 
-  // Cite 3 Chinois : le globe sur son tabouret ; les vrais continents, trois punaises lumineuses (Paris, Pékin, Rio)
+  // Cite 3 Chinois : le globe sur son tabouret ; les vrais continents, la Chine en rouge et ses trois punaises (Pékin, Chengdu, Canton)
   globe(g, { M, boite }) {
     const tabouret = M('#6b4a32', { roughness: .7 });
     const assise = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .05, 12), tabouret); assise.position.y = .62; g.add(assise);
@@ -785,14 +831,18 @@ const FORMES = {
     const base = new THREE.Mesh(new THREE.CylinderGeometry(.09, .12, .04, 12), M('#8c6a3c', { metalness: .5, roughness: .4 })); base.position.y = .02; support.add(base);
     const axe = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .16, 6), M('#8c6a3c', { metalness: .5 })); axe.position.y = .1; support.add(axe);
     // la carte : terre ou mer, par cases de 2°, tirée des contours des pays de Cite 3 Chinois
-    const carte = atob('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8Af/gAAAAAAAAAAAAAAAAAAAAAAAf//////AAAAAAAABgAAAAAAAAAAAAMf+f///4AA/AAAAAB+AAAAAAAAAABwAz4f///4AAIAAAAAAHAAAAAAAAAAAPmvwAf//wAAAAADgAP/4AHgAAAAAAD83/8AP//gAAAAAGBD///+DAAAABgACfw3/gH//gAAA4AED//////+gAgP////5dz4H//AAAP/gA//////////gP//////x+H/wAAAf/7///////////8///////n+D8A+AA+/f///////////sP/////4A8B4AAAH9/////////////Af/////gHwA4AAAH5///////////v4AHwP///gH2AAAAAH4//////////CMAADQB///8D/AAAAGD5/////////8A8AAEAA////n/gAAAPDj/////////4A4AAAAAP///n/wAAAbn///////////AwAAAAAP/////wAAAD////////////AAAAAAAH////8cAAAB///////////9AAAAAAAD////8MAAAB///////////9AAAAAAAD///v/AAAAA//5fP//////5AAAAAAAD//9/gAAAAPxvwPP//////zgAAAAAAD////AAAAAPib//n/////+CAAAAAAAD///+AAAAAfCLf/n/////ECAAAAAAAB///8AAAAAPHRP/3/////mOAAAAAAAA///8AAAAAH/AA///////G8AAAAAAAAf//4AAAAAP/gA///////hgAAAAAAAAP//wAAAAAf/7////////gAAAAAAAAAH/gQAAAAAf//////////gAAAAAAAAAF/AQAAAAB///+/n/////gAAAAAAAAAC/AAAAAAB////fyX////AAAAAAAAAAAeA4AAAAD////f/B///+gAAAAAAAAAAfGGAAAAD////v/B/z/QAAAAAAAgAAAPuBwAAAD////n+Afh+QAAAAAAAAAAAD8AAAAAD////38AfB/AwAAAAAAAAAAAPgAAAAD////7wAcAfggAAAAAAAAAAADgAAAAD////+AAMAfgIAAAAAAAAAAABhwAAAD////8wAMATgYAAAAAAAAAAAA//AAAB/////wAOAQAMAAAAAAAAAAAAH/gAAA/////gACAIAMAAAAAAAAAAAAH/8AAAfH///gAAAsHAAAAAAAAAAAAAH/+AAAAB///AAAAcOAAAAAAAAAAAAAP/+AAAAB//+AAAAce6AAAAAAAAAAAAP//gAAAB/94AAAAMewgAAAAAAAAAAAP//+AAAB//4AAAAGew/AAAAAAAAAAAP///AAAA//wAAAACAwPmAAAAAAAAAAP///gAAA//wAAAAB4AHwAAAAAAAAAAH///gAAAf/wAAAAAAsDYAAAAAAAAAAH///AAAAf/4AAAAAAAAAAAAAAAAAAAD//+AAAA//4gAAAAAB5AAAAAAAAAAAD//+AAAA//4wAAAAAHxgAAAAAAAAAAA//+AAAA//zgAAAAAf/gAAAAAAAAAAAf/+AAAA//DgAAAAAf/wAAAAAAAAAAAf/8AAAAf/DgAAAAD//4AAAAAAAAAAAf/4AAAAf/DAAAAAH//8AAAAAAAAAAAf/gAAAAf/DAAAAAH//+AAAAAAAAAAAf/AAAAAP+AAAAAAH//+AAAAAAAAAAA//AAAAAP8AAAAAAH//+AAAAAAAAAAA/+AAAAAH4AAAAAAD//+AAAAAAAAAAA/8AAAAAHwAAAAAAD4f8AAAAAAAAAAA/4AAAAAAAAAAAAADAH8AAAAAAAAAAB/wAAAAAAAAAAAAAAAD4AEAAAAAAAAB/AAAAAAAAAAAAAAAAAQAGAAAAAAAAB+AAAAAAAAAAAAAAAAAQAMAAAAAAAAB8AAAAAAAAAAAAAAAAAQAYAAAAAAAAB8AAAAAAAAAAAAAAAAAAAwAAAAAAAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAAAAAAAAAAAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////');
+    const carte = atob('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8Af/gAAAAAAAAAAAAAAAAAAAAAAA//////+AAAAAAAADgAAAAAAAAAAAAI/+f///4AB/AAAAAB8AAAAAAAAAABwAj4f///wAAYAAAAAAPAAAAAAAAAAAHmvwAf//wAAAAADgAf/4AHAAAAAAAD4238AP//gAAAAAOBD///8DAAAgBgACfx3/gP//gAAA4AMHf//////gAAf////79jwH/+AAAP/gA//////////8P//////h+H/gAAAf/6///////////M///////n8D8A+AB+/v///////////AP/////4g8D4AAAH9/////////////Af/////gHgB4AAAP5///////////P4AHgP///gH0AAAAAH4/////////+GMAADQB///8H+AAAAGCx/////////8A8AAIAA////v/gAAAPDj/////////wA4AAAAAf///v/wAAAbv///////////AwAAAAAP/////wAAAH////////////AAAAAAAH////8YAAAB///////////9AAAAAAAD//9/8MAAAB///////////9AAAAAAAD///f/AAAAB//7/f//////5AAAAAAAD//9/gAAAAfxvwPP//////jAAAAAAAD////AAAAAfi///n/////+CAAAAAAAD///+AAAAAfCLf/n////+MCAAAAAAAB///8AAAAAOGRP/3/////mOAAAAAAAB///8AAAAAH/AA///////E8AAAAAAAAf//wAAAAAf/AB///////hgAAAAAAAAP//wAAAAAf/7////////gAAAAAAAAAP/gwAAAAA/////f/////gAAAAAAAAAF+AQAAAAB///+/v/////AAAAAAAAAAC+AAAAAAD/////0n////gAAAAAAAAAAeAwAAAAD////f/D///8gAAAAAAAAAAfEOAAAAH////v/B/z/wAAAAAAAAAAAPMBwAAAD////v+A/B+gAAAAAAAAAAAH8AAAAAD////38AeB/AgAAAAAAAAAAAPAAAAAH////3wAcAfggAAAAAAAAAAADAAAAAD////+AAcAfgwAAAAAAAAAAABDwAAAD////9wAMATAYAAAAAAAAAAAA//AAAB/////gAOASAYAAAAAAAAAAAAH/gAAA/////gACAICIAAAAAAAAAAAAH/8AAAfP///AAAAsHAAAAAAAAAAAAAH/+AAAAB//+AAAA8OAAAAAAAAAAAAAP/+AAAAB//8AAAAc+oAAAAAAAAAAAAP//gAAAD/94AAAAMeggAAAAAAAAAAAP//+AAAB//wAAAAGdg/AAAAAAAAAAAf///AAAA//wAAAACAwPkAAAAAAAAAAP///gAAA//wAAAABwAHwAAAAAAAAAAP///gAAA//wAAAAAAIDYAAAAAAAAAAH///AAAAf/wAAAAAAAAAAAAAAAAAAAH//+AAAA//wgAAAAABxAAAAAAAAAAAD//+AAAA//xgAAAAAPxgAAAAAAAAAAB//+AAAA//zgAAAAAf/gABAAAAAAAAAf/8AAAA//DgAAAAAf/wAAAAAAAAAAAf/8AAAAf/DAAAAAD//4CAAAAAAAAAAf/4AAAAf/DAAAAAH//8AAAAAAAAAAAf/AAAAAf+DAAAAAH//8AAAAAAAAAAA//AAAAAf8AAAAAAH//+AAAAAAAAAAA/+AAAAAP8AAAAAAH//+AAAAAAAAAAA/+AAAAAH4AAAAAAH//+AAAAAAAAAAA/8AAAAAHwAAAAAAD4f8AAAAAAAAAAA/4AAAAAAAAAAAAADAH8AIAAAAAAAAB/wAAAAAAAAAAAAAAAD4AEAAAAAAAAB+AAAAAAAAAAAAAAAAAAAGAAAAAAAAB+AAAAAAAAAAAAAAAAAwAMAAAAAAAAB8AAAAAAAAAAAAAAAAAQAYAAAAAAAAB4AAAAAAAAAAAAAAAAAABwAAAAAAAAD4AAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAACAAAAAAAAAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////');
+    // la Chine, en cases de 2° (de 59°N à 13°N, de 67°E à 141°E), grossie d'une case tout autour pour qu'on la voie bien
+    const chineB = atob('AAAAAAAAAAAAAAAAA+AAAAAPwABwAP+AA+AD/4A/wB/+AP/B//gH////wH////4B////4Af///4AD///+AAf///gAH///4AA///+AAD///gAAAf/wAAAH/4AAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAA');
+    const chine = (lat, lon) => { const j = Math.round((59 - lat) / 2), i = Math.round((lon - 67) / 2); if (j < 0 || j >= 24 || i < 0 || i >= 38) return 0; const k = j * 38 + i; return (chineB.charCodeAt(k >> 3) >> (7 - (k & 7))) & 1; };
     const terre = (lat, lon) => { const j = Math.min(89, Math.max(0, Math.round((89 - lat) / 2))), i = ((Math.round((lon + 179) / 2) % 180) + 180) % 180, k = j * 180 + i; return (carte.charCodeAt(k >> 3) >> (7 - (k & 7))) & 1; };
-    const geo = sansIndex(new THREE.IcosahedronGeometry(.26, 4));
+    const geo = sansIndex(new THREE.IcosahedronGeometry(.26, 14));   // 4 500 facettes : assez pour voir les pays
     const p = geo.attributes.position, coul = [], c = new THREE.Color();
     for (let i = 0; i < p.count; i += 3) {
       const cx = p.getX(i) + p.getX(i + 1) + p.getX(i + 2), cy = p.getY(i) + p.getY(i + 1) + p.getY(i + 2), cz = p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2), r = Math.hypot(cx, cy, cz);
       const lat = Math.asin(cy / r) * 180 / Math.PI, lon = Math.atan2(-cz, cx) * 180 / Math.PI, bruit = Math.sin(cx * 40) * Math.cos(cz * 37 + cy * 11);
-      if (!terre(lat, lon)) c.set(bruit > .3 ? '#346f98' : '#2f6690');
+      if (chine(lat, lon)) c.set(bruit > 0 ? '#d8342c' : '#c62d26');
+      else if (!terre(lat, lon)) c.set(bruit > .3 ? '#346f98' : '#2f6690');
       else if (lat > 64 || lat < -60) c.set('#eef2f3');
       else if ((lat > 14 && lat < 33 && lon > -17 && lon < 60) || (lat < -18 && lat > -32 && lon > 116 && lon < 142) || (lat > 36 && lat < 46 && lon > 75 && lon < 110)) c.set(bruit > 0 ? '#dcbd7c' : '#d2b06c');
       else c.set(bruit > .2 ? '#6c9f52' : lat > 50 ? '#4f8048' : '#7fae58');
@@ -802,15 +852,18 @@ const FORMES = {
     const boule = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .55, flatShading: true }));
     const pivot = new THREE.Group(); pivot.position.y = .44; pivot.rotation.z = .41; support.add(pivot); pivot.add(boule);
     const arc = new THREE.Mesh(new THREE.TorusGeometry(.3, .01, 5, 24, Math.PI), M('#8c6a3c', { metalness: .5 })); arc.rotation.z = Math.PI / 2; pivot.add(arc);
-    const feux = [[48.85, 2.35], [39.9, 116.4], [-22.9, -43.2]].map(([la, lo]) => {
-      const f = new THREE.Mesh(new THREE.SphereGeometry(.016, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffc96b' }));
+    const feux = [[39.9, 116.4], [30.7, 104.1], [23.1, 113.3]].map(([la, lo]) => {
+      const f = new THREE.Mesh(new THREE.SphereGeometry(.012, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffd35a' }));
       const a = la * Math.PI / 180, b = lo * Math.PI / 180;
       f.position.set(Math.cos(a) * Math.cos(b), Math.sin(a), -Math.cos(a) * Math.sin(b)).multiplyScalar(.266); boule.add(f); return f;
     });
+    const FACE_CHINE = Math.atan2(Math.cos(108 * Math.PI / 180), Math.sin(108 * Math.PI / 180)) + Math.PI;   // l'angle qui met la Chine face à nous
     return {
       anime(temps, eveil, secousse, dt) {
-        boule.rotation.y += dt * (.15 + eveil * .5 + secousse * 6);
-        feux.forEach((f, i) => f.scale.setScalar(1 + (Math.sin(temps * 3 + i * 2) * .5 + .5) * eveil * 1.2));
+        // quand on arrive devant, il se tourne vers la Chine (et oscille un peu) ; sinon il tourne doucement
+        if (eveil > .3 && !secousse) { const vise = FACE_CHINE + Math.sin(temps * .6) * .3; let d = (vise - boule.rotation.y) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; boule.rotation.y += d * Math.min(1, dt * 2.2 * eveil); }
+        else boule.rotation.y += dt * (.15 + secousse * 6);
+        feux.forEach((f, i) => f.scale.setScalar(1 + (Math.sin(temps * 3 + i * 2) * .5 + .5) * eveil * .5));
       },
     };
   },
