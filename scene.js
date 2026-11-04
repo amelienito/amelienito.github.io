@@ -34,14 +34,23 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#15110d');
   const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
+  // la taille de la pièce suit toujours celle de l'écran. Sur iPhone, la page peut démarrer avant que l'écran ait sa vraie
+  // taille (ouverte depuis une appli, barre d'adresse qui bouge) : sans nouvelle mesure, l'image restait écrasée en largeur.
+  let tw = 0, th = 0;
   function taille() {
     const w = toile.clientWidth || innerWidth, h = toile.clientHeight || innerHeight;
+    if (!w || !h || (w === tw && h === th)) return;
+    tw = w; th = h;
     rendu.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = w / h < 0.8 ? 66 : 50;
     camera.updateProjectionMatrix();
   }
   addEventListener('resize', taille);
+  addEventListener('orientationchange', () => setTimeout(taille, 250));
+  addEventListener('pageshow', taille);
+  if (window.visualViewport) visualViewport.addEventListener('resize', taille);
+  if (window.ResizeObserver) new ResizeObserver(taille).observe(toile);
   taille();
 
   /* ─────────── la lumière : un plafonnier chaud, la nuit par la fenêtre ─────────── */
@@ -194,7 +203,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   });
 
   /* ─────────── la boucle ─────────── */
-  let avant = performance.now(), temps = 0, derniere = -1, enPause = false, flash = 0;
+  let avant = performance.now(), temps = 0, derniere = -1, enPause = false, flash = 0, verifTaille = 0;
   const voile = document.createElement('div');
   voile.style.cssText = 'position:fixed;inset:0;pointer-events:none;background:#fff4e0;opacity:0;transition:opacity .35s';
   document.body.appendChild(voile);
@@ -203,6 +212,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     const m = performance.now(), dt = Math.min(.05, (m - avant) / 1000); avant = m; temps += dt;
     t += (cibleT - t) * (reduit ? 1 : 1 - Math.pow(.002, dt));
     if (Math.abs(cibleT - t) < .0005) t = cibleT;
+    if (++verifTaille % 30 === 0) taille();   // filet de sécurité : deux fois par seconde, on revérifie la taille
     placer(temps);
     const ici = Math.round(t);
     if (ici !== derniere) { derniere = ici; surEtape(ici, {}); }

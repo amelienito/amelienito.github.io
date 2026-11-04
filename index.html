@@ -88,7 +88,8 @@
     @media (max-width: 720px) {
       .aide { left: 76px; right: 76px; bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px)); max-width: none; text-align: center; font-size: 10px; letter-spacing: .08em; }
       .sommaire { display: none; }
-      .fiche { right: 16px; bottom: max(84px, calc(env(safe-area-inset-bottom) + 76px)); }
+      .fiche { right: 16px; bottom: max(100px, calc(env(safe-area-inset-bottom) + 92px)); }   /* « Entrer » respire au-dessus des flèches */
+      .marque b { font-size: 14px; } .marque span { display: none; }                          /* en haut à gauche, en petit : il ne touche plus « Son » */
       .fleches { left: 16px; right: 16px; justify-content: space-between; }
       .fleches .outil { width: 54px; height: 50px; }
       .titre-grand { top: 14vh; }
@@ -137,7 +138,7 @@
     /* le départ : « Commencer » lance le son et emmène à la première création ; avant, la molette et le doigt attendent */
     .depart { position: fixed; left: 50%; bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px)); transform: translateX(-50%); display: none; justify-items: center; gap: 12px; }
     body.avant-debut .depart { display: grid; }
-    body.avant-debut .avancer { display: none; }
+    body.avant-debut .avancer, body.avant-debut .fleches { display: none; }   /* avant « Commencer », pas de flèches : un seul bouton */
     .commencer { position: relative; display: grid; justify-items: center; gap: 6px; padding: 17px 34px 15px; border: 1px solid var(--os); background: rgba(13,12,10,.62); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: var(--os);
       font: 500 15px/1 "IBM Plex Mono", monospace; letter-spacing: .32em; text-transform: uppercase; padding-left: calc(34px + .32em); transition: background .25s, color .25s, transform .2s; animation: depart-arrive .9s .4s cubic-bezier(.2,.8,.2,1) both; }
     .commencer small { font-size: 10px; letter-spacing: .2em; color: var(--cendre); transition: color .25s; }
@@ -365,7 +366,7 @@
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js');
+        const { demarrer } = await import('./scene.js?v=20261104');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
           depart: retourDe > 0 ? retourDe : 0, bloque: () => avantDebut, surBloque: appeler,
           // l'ordi (onsenbranle.fr) n'est pas une étape, mais un clic dessus l'ouvre, comme les autres
