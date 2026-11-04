@@ -1,7 +1,7 @@
 /* ════════════════════════════════════════════════════════════════════
    OSB CORPORATION — la pièce
    Une chambre-bureau vue comme une maison de poupée : chaque création
-   est un objet de la pièce (l'ordi, la platine, le globe, le panier de
+   est un objet de la pièce (l'ordi, la chaîne CD, le globe, le panier de
    Talya, le pupitre de quiz, la cible, le carton). On passe de l'un à l'autre
    à la molette, au doigt ou aux flèches ; un clic sur l'objet l'ouvre.
    ════════════════════════════════════════════════════════════════════ */
@@ -13,7 +13,7 @@ import * as THREE from './vendor/three.min.js';   // three.js compacté (vendor/
 const PLACES = {
   ordi:       { pos: [-2.6, 0, -3.35], face: 0,            vue: [2.3, 1.55, 1.05] },
   platine:    { pos: [1.9, 0, -3.5],   face: 0,            vue: [2.2, 1.5, .95] },
-  globe:      { pos: [-4.1, 0, -.7],   face: Math.PI / 2,  vue: [2.3, 1.55, 1.1] },
+  globe:      { pos: [-4.1, 0, -.7],   face: Math.PI / 2,  vue: [2.45, 1.62, 1.3] },
   talya:      { pos: [3.1, 0, 1.1],    face: -2.4,         vue: [2.4, 1.35, .35] },
   quiz:       { pos: [4.5, 0, -1.6],   face: -Math.PI / 2, vue: [2.7, 1.55, 1.15] },
   flechettes: { pos: [-4.92, 0, 1.9],  face: Math.PI / 2,  vue: [2.6, 1.6, 1.55] },
@@ -102,7 +102,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   }
   // aux murs : ses images, encadrées
   const chargeur = new THREE.TextureLoader();
-  function tableau(url, w, h, x, y, z, ry, { cadre = '#1d1b19', bord = .05, epais = .045, dore = false, marge = .055, passe = '#f3eee2' } = {}) {
+  function tableau(url, w, h, x, y, z, ry, { cadre = '#1d1b19', bord = .05, epais = .045, dore = false, marge = .055, passe = '#f3eee2', lum = .42 } = {}) {
     const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; scene.add(g);
     // la baguette : un cadre épais aux angles, qui dépasse du mur ; dedans un passe-partout crème ; puis l'image, un peu en retrait
     const matCadre = M(cadre, dore ? { metalness: .55, roughness: .38, flatShading: false } : { roughness: .55, flatShading: false });
@@ -113,14 +113,14 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     const epaisImage = .012;
     const mat = new THREE.MeshStandardMaterial({ color: '#2a2622', roughness: .85 });
     // un peu de lumière propre, sinon le haut des murs les avale
-    chargeur.load(url, tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; mat.map = mat.emissiveMap = tex; mat.color.set('#ffffff'); mat.emissive.set('#ffffff'); mat.emissiveIntensity = .42; mat.needsUpdate = true; });
+    chargeur.load(url, tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4; mat.map = mat.emissiveMap = tex; mat.color.set('#ffffff'); mat.emissive.set('#ffffff'); mat.emissiveIntensity = lum; mat.needsUpdate = true; });
     const image = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); image.position.z = epaisImage; image.receiveShadow = true; g.add(image);
     image.userData.garder = true;   // son image arrive plus tard : on ne la fusionne pas
   }
-  tableau('img/murs/chief-keef.jpg', 1.0, .749, 1.9, 1.54, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .06, dore: true, marge: .06 });   // Chief Keef au jardin d'Éden, au-dessus de la platine
+  tableau('img/murs/chief-keef.jpg', 1.0, .749, 1.9, 1.54, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .06, dore: true, marge: .06 });   // Chief Keef au jardin d'Éden, au-dessus de la chaîne CD
   tableau('img/murs/koi.jpg', .66, .66, -2.6, 2.06, -4.18, 0, { cadre: '#5a3820', bord: .05 });                                     // la carpe géante, au-dessus du bureau
-  tableau('img/murs/i-love-ugly.jpg', .96, .642, -4.99, 1.86, .62, Math.PI / 2, { cadre: '#161514', bord: .045 });                                                   // I Love Ugly (Chester Watson), entre le globe et la cible
-  tableau('img/murs/evil-dead-2.jpg', .56, .868, 4.99, 1.72, -2.85, -Math.PI / 2, { cadre: '#b8282e', bord: .035, marge: .045 });                           // Evil Dead 2, entre la plante et le pupitre de quiz
+  tableau('img/murs/i-love-ugly.jpg', .8, .535, -4.99, 2.02, -.7, Math.PI / 2, { cadre: '#161514', bord: .045, lum: .55 });   // I Love Ugly (Chester Watson), au-dessus du globe
+  tableau('img/murs/evil-dead-2.jpg', .5, .775, 4.99, 1.86, -1.6, -Math.PI / 2, { cadre: '#b8282e', bord: .035, marge: .045, lum: .75 });   // Evil Dead 2, au-dessus du pupitre de quiz
 
   meubler(scene, { M, boite });
   tableau('img/murs/seta.jpg', .76, .76, 4.99, 2.2, 2.85, -Math.PI / 2, { cadre: '#b07a48', bord: .05 });   // Seta, au-dessus de la télé
@@ -444,6 +444,27 @@ function ecranConsole() {
   return tex;
 }
 
+// un CD vu côté gravure : l'argent, les reflets arc-en-ciel qui tournent, le moyeu transparent et son trou
+function texteCD() {
+  return toileTexte(256, 256, (x, w, h) => {
+    const c = w / 2;
+    const base = x.createRadialGradient(c, c, 20, c, c, c); base.addColorStop(0, '#e8ebef'); base.addColorStop(1, '#b9bec6'); x.fillStyle = base; x.beginPath(); x.arc(c, c, c, 0, 7); x.fill();
+    if (x.createConicGradient) {
+      const arc = x.createConicGradient(0, c, c); ['rgba(255,120,200,.55)', 'rgba(120,200,255,.55)', 'rgba(170,255,170,.5)', 'rgba(255,240,140,.55)', 'rgba(255,120,200,.55)', 'rgba(120,200,255,.55)', 'rgba(255,120,200,.55)'].forEach((k, i, a) => arc.addColorStop(i / (a.length - 1), k));
+      x.globalCompositeOperation = 'overlay'; x.fillStyle = arc; x.beginPath(); x.arc(c, c, c, 0, 7); x.fill(); x.globalCompositeOperation = 'source-over';
+    }
+    x.strokeStyle = 'rgba(255,255,255,.35)'; for (let r = 46; r < c; r += 9) { x.lineWidth = 1; x.beginPath(); x.arc(c, c, r, 0, 7); x.stroke(); }
+    // la sérigraphie : un arc corail et un arc crème, comme sur les CD des années 2000 (et ça montre qu'il tourne)
+    x.lineWidth = 26; x.lineCap = 'round';
+    x.strokeStyle = '#e8613f'; x.beginPath(); x.arc(c, c, 72, -.4, 2.2); x.stroke();
+    x.strokeStyle = '#f3e6c4'; x.beginPath(); x.arc(c, c, 72, 2.75, 4.1); x.stroke();
+    x.fillStyle = '#1a1714'; x.font = '700 15px "IBM Plex Mono", monospace'; x.textAlign = 'center'; x.fillText('MUSIC DISCOVERY', c, c + 64);
+    x.fillStyle = '#d9dde2'; x.beginPath(); x.arc(c, c, 40, 0, 7); x.fill();
+    x.fillStyle = 'rgba(200,210,220,.55)'; x.beginPath(); x.arc(c, c, 30, 0, 7); x.fill();
+    x.fillStyle = '#1a1714'; x.beginPath(); x.arc(c, c, 10, 0, 7); x.fill();
+  });
+}
+
 // le cannage des portes du meuble télé (le rotin tressé des années 70)
 function cannage() {
   return toileTexte(256, 128, (x, w, h) => {
@@ -570,7 +591,7 @@ function meubler(scene, { M, boite }) {
   const tour = etagere(T, { M, boite }, { l: .46, p: .2, n: 8, pas: .178, item: CD, bois: '#2b2b2e', fond: '#2f5f6a', seed: 37, plein: .98 });
   tas(tour.g, boite, M, 3, .13, .011, .14, 0, tour.H, 0, CD.pal, 3);
 
-  // les DVD et Blu-ray, au fond à droite, à côté de la platine
+  // les DVD et Blu-ray, au fond à droite, à côté de la chaîne CD
   const D = new THREE.Group(); D.position.set(3.5, 0, -4.035); scene.add(D);
   const dvd = etagere(D, { M, boite }, { l: 1.2, p: .22, n: 6, pas: .245, item: DVD, bois: '#8a5d38', fond: '#2f5a46', seed: 73, plein: .97 });
   const poste = new THREE.Group(); poste.position.set(-.3, dvd.H, 0); dvd.g.add(poste);                                       // un vieux poste de radio
@@ -769,7 +790,7 @@ const FORMES = {
     return { anime(temps, eveil) { ampoule.intensity = 1.2 + eveil * .8; } };
   },
 
-  // Music Discovery : une vraie chaîne de mélomane, sur une enfilade en noyer des années 60
+  // Music Discovery : une chaîne CD de mélomane (lecteur à chargement par le dessus, ampli, enceintes), sur une enfilade en noyer
   platine(g, { M, boite }) {
     const noyer = M('#6e4527', { roughness: .5, flatShading: false }), noyerF = M('#5a3820', { roughness: .6 }), laiton = M('#c9a25a', { metalness: .7, roughness: .3, flatShading: false });
     const alu = M('#c9cbd0', { metalness: .6, roughness: .3, flatShading: false }), noir = M('#17161a', { roughness: .45 });
@@ -779,21 +800,26 @@ const FORMES = {
     [[-.78, -.19], [.78, -.19], [-.78, .19], [.78, .19]].forEach(([x, z]) => { const p = cylindre(g, .024, .013, .12, 8, M('#3a2416'), x, .06, z); p.rotation.z = x < 0 ? .12 : -.12; });
     for (let i = 0; i < 10; i++) boite(.072, .44, .02, noyer, .1 + i * .074, .35, .236, g);       // les portes à lattes
     boite(.02, .1, .02, laiton, .08, .4, .25, g);
-    ['#c8572f', '#2f4a5a', '#d9a23a', '#e6dcc2', '#7b3b2e', '#4f7a46', '#1d1c1f', '#9fd8ff', '#b8473a', '#e9c46a', '#6e5a8a', '#f0a6d8', '#2a2a30', '#d8d4c8'].forEach((c, i) => { const v = boite(.012, .32, .32, M(c), -.78 + i * .051, .29, .05, g); v.rotation.z = (i % 4 - 1.5) * .03; });
-    // la platine : socle en bois clair, plateau alu, le vinyle et son rond coloré, le bras
-    molle(g, .46, .07, .36, .015, M('#b98a5a', { roughness: .45, flatShading: false }), -.38, .66, 0);
-    cylindre(g, .155, .155, .016, 32, alu, -.42, .703, 0);
-    const disque = new THREE.Group(); disque.position.set(-.42, .714, 0); disque.userData.vivant = true; g.add(disque);
-    const vinyle = new THREE.Mesh(new THREE.CylinderGeometry(.148, .148, .005, 40), M('#111012', { roughness: .22, flatShading: false })); disque.add(vinyle);
-    const rond = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .007, 20), new THREE.MeshStandardMaterial({ map: toileTexte(128, 128, (x) => {
-      const d = x.createConicGradient ? x.createConicGradient(0, 64, 64) : null;
-      if (d) { ['#9fd8ff', '#f0a6d8', '#ffe08a', '#9fd8ff'].forEach((c, i) => d.addColorStop(i / 3, c)); x.fillStyle = d; } else x.fillStyle = '#9fd8ff';
-      x.fillRect(0, 0, 128, 128); x.fillStyle = '#111'; x.beginPath(); x.arc(64, 64, 6, 0, 7); x.fill();
-    }) })); rond.position.y = .002; disque.add(rond);
-    const bras = new THREE.Group(); bras.position.set(-.22, .72, -.12); bras.userData.vivant = true; g.add(bras);
-    cylindre(bras, .018, .02, .03, 10, alu, 0, 0, 0);
-    const tige = cylindre(bras, .005, .005, .26, 6, alu, -.05, .02, .12); tige.rotation.set(Math.PI / 2, 0, 0); tige.rotation.y = -.4;
-    cylindre(bras, .014, .014, .03, 10, noir, .02, .02, -.04).rotation.x = Math.PI / 2;      // le contrepoids
+    // la case ouverte : des CD rangés sur deux étages, tranches colorées, quelques boîtiers qui penchent
+    boite(.78, .015, .42, noyerF, -.42, .35, .01, g);
+    const tranches = ['#c8572f', '#2f4a5a', '#d9a23a', '#e6dcc2', '#7b3b2e', '#4f7a46', '#1d1c1f', '#9fd8ff', '#b8473a', '#e9c46a', '#6e5a8a', '#f0a6d8', '#2a2a30', '#d8d4c8'];
+    [.145, .36].forEach((y, rang) => { for (let i = 0; i < 48; i++) { if (rang && i > 40) break; const c = boite(.0105, .125, .142, M(tranches[(i * 5 + rang * 3) % tranches.length], { roughness: .35 }), -.79 + i * .0124, y + .0625, .06, g); if (i % 13 === 12) c.rotation.z = .08; } });
+    // le lecteur CD à chargement par le dessus : le couvercle fumé, le CD qui tourne dessous, l'écran bleu
+    molle(g, .44, .085, .34, .012, M('#1d1c20', { roughness: .4, flatShading: false }), -.37, .668, 0);
+    boite(.42, .004, .32, alu, -.37, .712, 0, g);
+    cylindre(g, .118, .118, .006, 40, noir, -.4, .715, -.01);                                 // le puits où on pose le CD
+    const disque = new THREE.Group(); disque.position.set(-.4, .72, -.01); disque.userData.vivant = true; g.add(disque);
+    const cd = new THREE.Mesh(new THREE.CylinderGeometry(.11, .11, .003, 48), new THREE.MeshStandardMaterial({ map: texteCD(), metalness: .35, roughness: .22, flatShading: false })); disque.add(cd);
+    const couvercle = new THREE.Mesh(new THREE.CylinderGeometry(.125, .125, .012, 40), new THREE.MeshStandardMaterial({ color: '#2a2d36', transparent: true, opacity: .32, roughness: .05, metalness: .2, flatShading: false }));
+    couvercle.position.set(-.4, .73, -.01); g.add(couvercle);
+    const affCD = toileTexte(256, 48, (x, w, h) => { x.fillStyle = '#071722'; x.fillRect(0, 0, w, h); x.fillStyle = '#7fe0ff'; x.font = '700 24px "IBM Plex Mono", monospace'; x.fillText('CD  01  ▶ 02:14', 14, 33); });
+    const lcdCD = new THREE.Mesh(new THREE.PlaneGeometry(.17, .032), new THREE.MeshBasicMaterial({ map: affCD, toneMapped: false })); lcdCD.position.set(-.37, .668, .172); g.add(lcdCD);
+    [-.52, -.21].forEach(x => { const b = cylindre(g, .01, .01, .01, 10, alu, x, .668, .172); b.rotation.x = Math.PI / 2; });
+    // entre le lecteur et l'ampli : une petite pile de boîtiers de CD, posés à plat, le dernier un peu de travers
+    ['#2f4a5a', '#e9c46a', '#b8473a', '#1d1c1f'].forEach((c, i) => {
+      const b = new THREE.Group(); b.position.set(-.05, .632 + i * .0106, .04); b.rotation.y = (i - 1.5) * .09 + (i === 3 ? .22 : 0); g.add(b);
+      boite(.142, .0102, .124, M(c, { roughness: .25 }), 0, 0, 0, b); boite(.008, .0104, .124, M('#141317', { roughness: .3 }), -.071, 0, 0, b);
+    });
     // l'ampli : façade alu, deux vu-mètres ambrés qui s'allument, gros boutons
     const ampli = new THREE.Group(); ampli.position.set(.3, .625, -.03); g.add(ampli);
     boite(.5, .13, .32, noir, 0, .065, 0, ampli); boite(.5, .12, .01, alu, 0, .065, .162, ampli);
@@ -808,13 +834,12 @@ const FORMES = {
       boite(.21, .36, .006, M('#d8c7a0', { roughness: 1 }), 0, .21, .131, e);
       boite(.05, .012, .003, laiton, 0, .06, .136, e);
     });
-    fusionnerDecor(g);   // le meuble, l'ampli, les enceintes : fixes ; le disque, le bras, les aiguilles bougent
+    fusionnerDecor(g);   // le meuble, les CD, l'ampli, les enceintes : fixes ; le CD qui tourne et les aiguilles bougent
     let v = 0;
     return {
       anime(temps, eveil, secousse, dt) {
-        v += ((.3 + eveil * 3.2 + secousse * 12) - v) * Math.min(1, dt * 2);
+        v += ((.6 + eveil * 9 + secousse * 20) - v) * Math.min(1, dt * 2);   // un CD tourne vite
         disque.rotation.y -= v * dt;
-        bras.rotation.y = -.28 * Math.min(1, eveil * 1.2);
         vu.emissiveIntensity = .35 + eveil * 1.1;
         aiguilles.forEach((a, i) => { a.rotation.z = .6 - eveil * (.5 + Math.abs(Math.sin(temps * (5 + i) + i)) * .7); });
       },
@@ -957,9 +982,9 @@ const FORMES = {
     const buzzer = new THREE.Mesh(new THREE.SphereGeometry(.095, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), M('#ff2a2a', { emissive: '#ff1a1a', emissiveIntensity: .3, roughness: .3, flatShading: false }));
     buzzer.position.set(0, 1.04, .04); buzzer.castShadow = true; buzzer.userData.garder = true; g.add(buzzer);
     const fiche = boite(.2, .005, .13, M('#f4efe4', { roughness: 1 }), .3, 1.005, .08, g); fiche.rotation.set(.1, -.3, 0);
-    // derrière : une lanterne « ? » sur un mât, qui tourne doucement
-    cylindre(g, .015, .015, 1.0, 6, noir, 0, 1.5, -.32);
-    const lanterne = new THREE.Group(); lanterne.position.set(0, 2.08, -.32); lanterne.userData.vivant = true; g.add(lanterne);
+    // à côté : une lanterne « ? » sur son pied, qui tourne doucement
+    cylindre(g, .13, .15, .03, 16, noir, .66, .015, -.1); cylindre(g, .015, .015, 1.62, 6, noir, .66, .82, -.1);
+    const lanterne = new THREE.Group(); lanterne.position.set(.66, 1.72, -.1); lanterne.userData.vivant = true; g.add(lanterne);
     const signe = toileTexte(128, 128, (x, w, h) => { x.fillStyle = '#1c2a4a'; x.fillRect(0, 0, w, h); x.fillStyle = '#ffd35a'; x.font = '900 104px "Inter Tight", Helvetica, Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('?', w / 2, h / 2 + 6); });
     const cube = new THREE.Mesh(new THREE.BoxGeometry(.22, .22, .22), new THREE.MeshStandardMaterial({ map: signe, emissiveMap: signe, emissive: '#ffffff', emissiveIntensity: .5, roughness: .6 }));
     lanterne.add(cube);

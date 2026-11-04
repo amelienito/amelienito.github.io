@@ -397,7 +397,7 @@
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js?v=20261104d');   // ?v= : force le téléphone à reprendre la dernière version
+        const { demarrer } = await import('./scene.js?v=20261104e');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
           depart: retourDe > 0 ? retourDe : 0, bloque: () => avantDebut, surBloque: appeler,
           surPret: () => { document.body.classList.add('piece-prete'); if (allerDesQuePret) { allerDesQuePret = false; parcours.aller(1); } },
