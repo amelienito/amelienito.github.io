@@ -20,7 +20,7 @@ const PLACES = {
   carton:     { pos: [-1.6, 0, 2.3],   face: .5,           vue: [2.2, 1.45, .35] },
 };
 
-export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {} }) {
+export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {}, depart = 0, bloque = () => false, surBloque = () => {} }) {
   const N = etapes.length;
   const cliche = new URLSearchParams(location.search).get('cliche');
 
@@ -111,10 +111,9 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     const g = new THREE.Group();
     g.position.set(...place.pos); g.rotation.y = place.face;
     scene.add(g);
-    const reflet = new THREE.PointLight(e.couleur, 0, 3.2, 1.5); reflet.position.set(0, 1.9, 1.1); g.add(reflet);
     const o = FORMES[e.forme](g, { M, boite });
     g.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-    objets.push({ k, g, place, reflet, anime: o.anime || (() => {}), caresser: o.caresser || null, eveil: 0, secousse: 0 });
+    objets.push({ k, g, place, selection: surbrillance(g, e.couleur), anime: o.anime || (() => {}), caresser: o.caresser || null, eveil: 0, secousse: 0 });
   });
   // les objets qui ne sont pas (ou plus) une étape restent dans la pièce, en décor
   // (ex. l'ordi allumé sur onsenbranle.fr, sorti de la sélection principale)
@@ -126,12 +125,13 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     g.position.set(...place.pos); g.rotation.y = place.face; scene.add(g);
     FORMES[forme](g, { M, boite });
     g.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-    if (decors[forme]) decorsCliquables.push({ g, decor: decors[forme] });
+    if (decors[forme]) decorsCliquables.push({ g, decor: decors[forme], selection: surbrillance(g, '#e6dcc2') });
   }
 
   /* ─────────── la caméra ─────────── */
   let t = 0, cibleT = 0;
   if (cliche) { const i = etapes.findIndex(e => e.id === cliche); if (i >= 0) t = cibleT = i; }
+  else if (depart > 0 && depart < N) t = cibleT = depart;   // retour d'une création : on reprend devant son objet
   const souris = new THREE.Vector2();
   const vues = etapes.map((e, k) => {
     if (!k) return { pos: new THREE.Vector3(.5, 3.2, 9.6), regard: new THREE.Vector3(.5, 1.1, -1.2) };
@@ -157,11 +157,12 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   /* ─────────── les commandes ─────────── */
   let repos = null;
   const aller = v => { cibleT = Math.max(0, Math.min(N - 1, v)); clearTimeout(repos); repos = setTimeout(() => { cibleT = Math.round(cibleT); }, 160); };
-  addEventListener('wheel', e => { if (document.body.classList.contains('liste')) return; e.preventDefault(); aller(cibleT + Math.max(-.6, Math.min(.6, e.deltaY / 500))); }, { passive: false });
+  addEventListener('wheel', e => { if (document.body.classList.contains('liste')) return; e.preventDefault(); if (bloque()) { surBloque(); return; } aller(cibleT + Math.max(-.6, Math.min(.6, e.deltaY / 500))); }, { passive: false });
   let doigt = null;
   toile.addEventListener('touchstart', e => { doigt = { y: e.touches[0].clientY, x: e.touches[0].clientX, t0: cibleT, bouge: false }; }, { passive: true });
   toile.addEventListener('touchmove', e => {
     if (!doigt) return;
+    if (bloque()) { if (!doigt.signale) { doigt.signale = true; surBloque(); } return; }
     const dy = doigt.y - e.touches[0].clientY, dx = doigt.x - e.touches[0].clientX;
     if (Math.hypot(dx, dy) > 8) doigt.bouge = true;
     aller(doigt.t0 + (Math.abs(dy) > Math.abs(dx) ? dy : dx) / 260);
@@ -210,8 +211,12 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
       o.eveil += (actif - o.eveil) * Math.min(1, dt * 3);
       if (cliche && actif) o.eveil = 1;
       o.secousse = Math.max(0, o.secousse - dt * 1.6);
-      o.reflet.intensity = o.eveil * 3.5 + (survol === o ? 1.5 : 0);
       o.anime(temps, o.eveil, o.secousse, dt);
+    }
+    // la sélection : l'objet survolé s'éclaire franchement, celui devant lequel on se trouve à peine ; en douceur (~150 ms)
+    for (const o of [...objets, ...decorsCliquables]) {
+      const vise = survol === o ? 1 : o.eveil ? o.eveil * .35 : 0;
+      o.selection.force.value += (vise - o.selection.force.value) * (reduit ? 1 : Math.min(1, dt * 12));
     }
     rendu.render(scene, camera);
     if (!cliche) requestAnimationFrame(image);
@@ -443,6 +448,32 @@ function meubler(scene, { M, boite }) {
   boite(1.12, .78, .04, M('#1d1b19', { roughness: .6 }), 0, 0, 0, aff).castShadow = false;
   const feuille = new THREE.Mesh(new THREE.PlaneGeometry(1.0, .667), new THREE.MeshStandardMaterial({ map: print, emissiveMap: print, emissive: '#ffffff', emissiveIntensity: .4, roughness: .9 }));
   feuille.position.z = .021; aff.add(feuille);
+}
+
+/* ═══════════════ la sélection d'un objet, dessinée par ses matériaux ═══════════════
+   Pas de lampe : un liseré de la couleur de la création sur le contour de l'objet (effet de Fresnel),
+   et un léger voile sur ses faces. Une seule petite addition dans le shader de chaque matériau :
+   ça coûte presque rien, et ça éclaire l'objet, pas le mur derrière. */
+function surbrillance(g, couleur) {
+  const u = { force: { value: 0 }, couleur: { value: new THREE.Color(couleur) } };
+  g.traverse(m => {
+    if (!m.isMesh || Array.isArray(m.material)) return;
+    let mat = m.material;
+    if (mat.userData.selection === u) return;
+    if (mat.userData.selection) { mat = mat.clone(); m.material = mat; }   // matériau partagé avec un autre objet : on le double
+    mat.userData.selection = u;
+    const eclaire = !!(mat.isMeshStandardMaterial || mat.isMeshPhongMaterial || mat.isMeshLambertMaterial);
+    mat.onBeforeCompile = sh => {
+      sh.uniforms.uSelection = u.force; sh.uniforms.uSelectionCouleur = u.couleur;
+      sh.fragmentShader = 'uniform float uSelection;\nuniform vec3 uSelectionCouleur;\n' + sh.fragmentShader.replace('#include <opaque_fragment>',
+        (eclaire
+          ? 'float bordSel = 1.0 - clamp(abs(dot(normalize(normal), normalize(vViewPosition))), 0.0, 1.0);\noutgoingLight += uSelectionCouleur * uSelection * (0.07 + pow(bordSel, 2.4) * 0.8);\n'
+          : 'outgoingLight += uSelectionCouleur * uSelection * 0.1;\n') + '#include <opaque_fragment>');
+    };
+    mat.customProgramCacheKey = () => eclaire ? 'selection-eclaire' : 'selection-simple';
+    mat.needsUpdate = true;
+  });
+  return u;
 }
 
 /* ════════════════════════════ les objets ════════════════════════════ */

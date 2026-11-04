@@ -42,7 +42,7 @@
     body.en-route .marque { opacity: 1; }
 
     .outils { position: fixed; right: clamp(16px, 3vw, 34px); top: max(16px, env(safe-area-inset-top)); display: flex; gap: 8px; }
-    .outil { padding: 9px 12px; border: 1px solid var(--trait); background: rgba(13,12,10,.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: var(--os); }
+    .outil { padding: 9px 12px; border: 1px solid var(--trait); background: rgba(13,12,10,.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: var(--os); transition: border-color .2s, background .2s, color .2s; }
     .outil:hover { border-color: rgba(230,220,194,.6); }
     .outil[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
@@ -62,14 +62,17 @@
     .fiche h2 { margin: 0; font: 600 clamp(2.2rem, 5.4vw, 4.2rem)/1 "Cormorant Garamond", Georgia, serif; letter-spacing: -.015em; text-shadow: 0 2px 30px rgba(0,0,0,.9); }
     .fiche .fiche-astuce { font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); opacity: 1; }
     .fiche p { margin: 0; font-style: italic; font-size: clamp(18px, 2vw, 22px); color: var(--os); opacity: .82; text-shadow: 0 1px 14px rgba(0,0,0,.9); }
-    .entrer { justify-self: start; margin-top: 12px; display: inline-flex; align-items: center; gap: 12px; padding: 13px 20px; border: 1px solid var(--accent); background: rgba(13,12,10,.6); color: var(--os); text-decoration: none; }
+    .entrer { justify-self: start; margin-top: 12px; display: inline-flex; align-items: center; gap: 12px; padding: 13px 20px; border: 1px solid var(--accent); background: rgba(13,12,10,.6); color: var(--os); text-decoration: none; transition: background .25s, color .25s; }
+    .entrer:not(.ferme):hover { background: var(--accent); color: var(--nuit); }
+    .entrer:not(.ferme):hover::after { color: var(--nuit); }
     .entrer::after { content: "→"; font-family: "IBM Plex Mono", monospace; color: var(--accent); transition: transform .25s; }
     .entrer:hover::after { transform: translateX(5px); }
     .entrer.ferme { border-style: dashed; color: var(--cendre); cursor: default; }
     .entrer.ferme::after { content: ""; }
 
     .sommaire { position: fixed; right: clamp(16px, 3vw, 34px); top: 50%; transform: translateY(-50%); display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; text-align: right; }
-    .sommaire button { padding: 6px 0 6px 18px; color: var(--cendre); display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+    .sommaire button { width: 100%; padding: 6px 0 6px 18px; color: var(--cendre); display: flex; justify-content: flex-end; align-items: center; gap: 10px; transition: color .25s; }   /* toute la largeur : les tirets s'alignent à droite */
+    .sommaire button:hover { color: var(--os); }
     .sommaire button::after { content: ""; width: 14px; height: 1px; background: currentColor; transition: width .3s; }
     .sommaire button[aria-current="true"] { color: var(--os); }
     .sommaire button[aria-current="true"]::after { width: 34px; background: var(--accent); }
@@ -126,6 +129,28 @@
     @media (max-width: 560px) { .pages { grid-template-columns: minmax(0, 1fr); } body { font-size: 18px; } }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
     body.cliche .hud { display: none; }
+
+    /* les textes posés sur la pièce laissent passer le doigt (sinon on ne peut pas glisser en commençant dessus) et ne se sélectionnent pas */
+    .titre-grand, .fiche, .fiche.visible, .aide { pointer-events: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+    .fiche.visible .entrer { pointer-events: auto; }
+
+    /* le départ : « Commencer » lance le son et emmène à la première création ; avant, la molette et le doigt attendent */
+    .depart { position: fixed; left: 50%; bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px)); transform: translateX(-50%); display: none; justify-items: center; gap: 12px; }
+    body.avant-debut .depart { display: grid; }
+    body.avant-debut .avancer { display: none; }
+    .commencer { position: relative; display: grid; justify-items: center; gap: 6px; padding: 17px 34px 15px; border: 1px solid var(--os); background: rgba(13,12,10,.62); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: var(--os);
+      font: 500 15px/1 "IBM Plex Mono", monospace; letter-spacing: .32em; text-transform: uppercase; padding-left: calc(34px + .32em); transition: background .25s, color .25s, transform .2s; animation: depart-arrive .9s .4s cubic-bezier(.2,.8,.2,1) both; }
+    .commencer small { font-size: 10px; letter-spacing: .2em; color: var(--cendre); transition: color .25s; }
+    .commencer::before { content: ""; position: absolute; inset: -1px; border: 1px solid var(--os); opacity: 0; animation: depart-onde 2.6s 1.4s ease-out infinite; pointer-events: none; }
+    .commencer:hover { background: var(--os); color: var(--nuit); }
+    .commencer:hover small { color: #4a443a; }
+    .commencer:active { transform: scale(.97); }
+    .commencer.appel { animation: depart-appel .5s cubic-bezier(.3,1.6,.5,1); }
+    .sans-son { padding: 6px 10px; color: var(--cendre); font-size: 10px; letter-spacing: .16em; transition: color .2s; animation: depart-arrive .9s .6s cubic-bezier(.2,.8,.2,1) both; }
+    .sans-son:hover { color: var(--os); }
+    @keyframes depart-arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes depart-onde { 0% { opacity: .55; transform: scale(1); } 100% { opacity: 0; transform: scale(1.18, 1.5); } }
+    @keyframes depart-appel { 0%, 100% { transform: none; } 30% { transform: translateY(-6px) scale(1.04); } 60% { transform: translateY(2px); } }
   </style>
 </head>
 <body class="parcours">
@@ -139,6 +164,10 @@
     </div>
     <div class="titre-grand"><h1>Les créations d'Amélien</h1><b aria-hidden="true">OSB Corporation</b><span aria-hidden="true">présente :</span></div>
     <button class="avancer mono" id="avancer"><span>Avancer</span><i aria-hidden="true"></i></button>
+    <div class="depart" id="depart">
+      <button class="commencer" id="commencer"><span>Commencer</span><small>avec le son</small></button>
+      <button class="sans-son mono" id="sans-son">ou en silence</button>
+    </div>
     <section class="fiche" id="fiche" aria-live="polite">
       <span class="num mono" id="fiche-num"></span>
       <h2 id="fiche-titre"></h2>
@@ -221,6 +250,15 @@
         o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 2.3);
       });
     }
+    // l'iPhone en mode silencieux coupe le son « d'ambiance » des pages : on demande le son d'une lecture (comme une vidéo).
+    // Safari récent : l'API audioSession ; avant : une piste muette qui tourne en boucle fait passer la page en lecture.
+    const SILENCE = 'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+    function sonMalgreSilencieux(oui) {
+      try { if (navigator.audioSession) { navigator.audioSession.type = oui ? 'playback' : 'auto'; return; } } catch (e) {}
+      if (!/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) || !('ontouchend' in document)) return;   // seulement iPhone / iPad
+      if (!sonMalgreSilencieux.piste) { const a = new Audio(SILENCE); a.loop = true; a.setAttribute('playsinline', ''); sonMalgreSilencieux.piste = a; }
+      if (oui) sonMalgreSilencieux.piste.play().catch(() => {}); else sonMalgreSilencieux.piste.pause();
+    }
     function majSon() {
       $('#son').setAttribute('aria-pressed', sonActif);
       $('#son').textContent = sonActif ? 'Son : oui' : 'Son';
@@ -228,12 +266,35 @@
     }
     $('#son').addEventListener('click', () => {
       sonActif = !sonActif; memoire.ecrire('osb-son', sonActif ? '1' : '0');
+      sonMalgreSilencieux(sonActif);
       preparerSon(); if (audio.c.state === 'suspended') audio.c.resume();
       majSon(); if (sonActif) note(parcours ? parcours.actuelle() : 0, true);
     });
     majSon();
     // le navigateur n'accepte le son qu'après un geste : on le prépare au premier contact
-    addEventListener('pointerdown', () => { if (sonActif) { preparerSon(); audio.c.resume(); majSon(); } }, { once: true });
+    addEventListener('pointerdown', () => { if (sonActif) { sonMalgreSilencieux(true); preparerSon(); audio.c.resume(); majSon(); } }, { once: true });
+
+    /* le départ : tant qu'on n'a pas appuyé sur « Commencer », la pièce attend (sauf retour d'une création, ou déjà commencé dans cette visite) */
+    const retourDe = location.hash ? ETAPES.findIndex(e => e.lien && '#' + e.id === decodeURIComponent(location.hash)) : -1;
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    const dejaParti = (() => { try { return sessionStorage.getItem('osb-parti') === '1'; } catch (e) { return false; } })();
+    let avantDebut = !cliche && !dejaParti && retourDe <= 0;
+    document.body.classList.toggle('avant-debut', avantDebut);
+    function commencer(avecSon, { allerAuPremier = true } = {}) {
+      if (!avantDebut) return false;
+      avantDebut = false; document.body.classList.remove('avant-debut');
+      try { sessionStorage.setItem('osb-parti', '1'); } catch (e) {}
+      sonActif = !!avecSon; memoire.ecrire('osb-son', sonActif ? '1' : '0');
+      if (sonActif) { sonMalgreSilencieux(true); preparerSon(); audio.c.resume(); }
+      majSon();
+      if (allerAuPremier && parcours) parcours.aller(1); else if (sonActif) note(0, true);
+      return true;
+    }
+    function appeler() { const b = $('#commencer'); b.classList.remove('appel'); void b.offsetWidth; b.classList.add('appel'); }
+    $('#commencer').addEventListener('click', () => commencer(true));
+    $('#sans-son').addEventListener('click', () => commencer(false));
+    // toucher un objet avant de commencer : ça commence (avec le son), et on va vers l'objet touché
+    $('#toile').addEventListener('click', () => { if (avantDebut) commencer(true, { allerAuPremier: false }); }, true);
 
     /* la fiche de l'étape en cours */
     // une caresse à Talya : deux petites notes joyeuses
@@ -306,6 +367,7 @@
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
         const { demarrer } = await import('./scene.js');
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
+          depart: retourDe > 0 ? retourDe : 0, bloque: () => avantDebut, surBloque: appeler,
           // l'ordi (onsenbranle.fr) n'est pas une étape, mais un clic dessus l'ouvre, comme les autres
           decors: { ordi: { lien: 'https://www.onsenbranle.fr' } }, surDecor: d => entrerDans(d.lien) });
       } catch (e) {
@@ -320,13 +382,18 @@
 
     document.addEventListener('click', e => {
       const b = e.target.closest('[data-aller]'); if (!b || !parcours) return;
-      e.preventDefault(); parcours.aller(+b.dataset.aller);
+      e.preventDefault(); commencer(true, { allerAuPremier: false }); parcours.aller(+b.dataset.aller);
     });
     $('#avancer').addEventListener('click', () => parcours && parcours.suivant());
-    $('#suivant').addEventListener('click', () => parcours && parcours.suivant());
-    $('#precedent').addEventListener('click', () => parcours && parcours.precedent());
+    $('#suivant').addEventListener('click', () => { if (commencer(true)) return; parcours && parcours.suivant(); });
+    $('#precedent').addEventListener('click', () => { if (avantDebut) { appeler(); return; } parcours && parcours.precedent(); });
     addEventListener('keydown', e => {
       if (!parcours || document.body.classList.contains('liste')) return;
+      if (avantDebut) {
+        if (e.key === 'Enter' && document.activeElement === document.body) { e.preventDefault(); commencer(true); }
+        else if (['ArrowDown', 'ArrowRight', 'PageDown', ' ', 'ArrowUp', 'ArrowLeft', 'PageUp', 'End'].includes(e.key) && !e.target.closest('button')) { e.preventDefault(); appeler(); }
+        return;
+      }
       if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); parcours.suivant(); }
       else if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); parcours.precedent(); }
       else if (e.key === 'Home') parcours.aller(0);
