@@ -27,7 +27,12 @@
     .mono { font: 500 12px/1.3 "IBM Plex Mono", monospace; letter-spacing: .14em; text-transform: uppercase; }
 
     /* ─────────── le parcours ─────────── */
-    body.parcours { overflow: hidden; height: 100svh; }
+    body.parcours { overflow: hidden; height: 100svh; position: fixed; inset: 0; overscroll-behavior: none; touch-action: none; }   /* la page ne glisse pas sous la pièce */
+    html:has(body.parcours) { overflow: hidden; overscroll-behavior: none; }
+    button, a { touch-action: manipulation; }   /* pas de zoom au double appui sur un bouton */
+    #toile { opacity: 0; transition: opacity .8s ease; } body.piece-prete #toile { opacity: 1; }
+    body:not(.piece-prete) .commencer { opacity: .55; pointer-events: none; animation: none; }
+    body:not(.piece-prete) .commencer::before { animation: none; }
     #toile { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
     .hud::before { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 46vh; pointer-events: none; background: linear-gradient(transparent, rgba(13,10,7,.78)); opacity: 0; transition: opacity .6s; }
     .hud::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 34vh; pointer-events: none; background: linear-gradient(rgba(13,10,7,.7), transparent); }
@@ -166,7 +171,7 @@
     <div class="titre-grand"><h1>Les créations d'Amélien</h1><b aria-hidden="true">OSB Corporation</b><span aria-hidden="true">présente :</span></div>
     <button class="avancer mono" id="avancer"><span>Avancer</span><i aria-hidden="true"></i></button>
     <div class="depart" id="depart">
-      <button class="commencer" id="commencer"><span>Commencer</span><small>avec le son</small></button>
+      <button class="commencer" id="commencer"><span>Commencer</span><small id="commencer-sous">la pièce arrive…</small></button>
       <button class="sans-son mono" id="sans-son">ou en silence</button>
     </div>
     <section class="fiche" id="fiche" aria-live="polite">
@@ -201,11 +206,11 @@
 
   <script type="module">
     /* ─────────── les créations : c'est ici qu'on en ajoute ───────────
-       forme : ordi, platine, globe, talya, cabinet, flechettes, carton (leur place est dans scene.js, PLACES).
+       forme : ordi, platine, globe, talya, quiz, flechettes, carton (leur place est dans scene.js, PLACES).
        onsenbranle.fr n'est plus une étape : l'ordi reste dans la pièce en décor (un clic dessus l'ouvre), et le lien est en bas de la liste. */
     const ETAPES = [
       { id: 'arrivee' },
-      { id: 'fun-facts', titre: 'Fun facts', legende: 'Pour apprendre en s’amusant', lien: 'https://amelienito.github.io/fun-facts/', forme: 'cabinet', couleur: '#e3b04b', image: 'img/fun-facts.png' },
+      { id: 'fun-facts', titre: 'Fun facts', legende: 'Pour apprendre en s’amusant', lien: 'https://amelienito.github.io/fun-facts/', forme: 'quiz', couleur: '#e3b04b', image: 'img/fun-facts.png' },
       { id: 'cite-3-chinois', titre: 'Cite 3 Chinois', legende: 'Voyons voir si t’es raciste', lien: 'https://amelienito.github.io/cite-trois-chinois/', forme: 'globe', couleur: '#ffc96b', image: 'img/cite-3-chinois.png' },
       { id: 'hb', titre: 'RP Talya', legende: 'Joyeux anniversaire Flo', lien: 'https://amelienito.github.io/Hb/', forme: 'talya', couleur: '#cfe8dc', image: 'img/rp-talya.png' },
       { id: 'music-discovery', titre: 'Music Discovery', legende: 'Découvrir de la musique sainement', lien: 'https://amelienito.github.io/music-discovery/', forme: 'platine', couleur: '#9fd8ff', image: 'img/music-discovery.png' },
@@ -360,15 +365,28 @@
     $('#vers-liste').addEventListener('click', () => liste(true));
     $('#vers-parcours').addEventListener('click', () => { if (!parcours) return; liste(false); });
 
+    /* dans la pièce, Safari ne doit ni zoomer (pincer, double appui) ni faire glisser la page : sinon on reste coincé, zoomé */
+    const dansLaPiece = () => document.body.classList.contains('parcours');
+    ['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, e => { if (dansLaPiece()) e.preventDefault(); }, { passive: false }));
+    document.addEventListener('touchmove', e => { if (dansLaPiece() && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    document.addEventListener('dblclick', e => { if (dansLaPiece()) e.preventDefault(); });
+    // et si la page s'est quand même retrouvée zoomée, on la remet à l'échelle (petite astuce sur la balise viewport)
+    if (window.visualViewport) visualViewport.addEventListener('resize', () => {
+      if (!dansLaPiece() || visualViewport.scale < 1.02) return;
+      const v = document.querySelector('meta[name=viewport]'), avant = v.content;
+      v.content = avant + ', maximum-scale=1'; setTimeout(() => { v.content = avant; }, 400);
+    });
+
     /* le parcours */
     let parcours = null;
     async function lancer() {
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js?v=20261104b');   // ?v= : force le téléphone à reprendre la dernière version
+        const { demarrer } = await import('./scene.js?v=20261104c');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
           depart: retourDe > 0 ? retourDe : 0, bloque: () => avantDebut, surBloque: appeler,
+          surPret: () => { document.body.classList.add('piece-prete'); $('#commencer-sous').textContent = 'avec le son'; },
           // l'ordi (onsenbranle.fr) n'est pas une étape, mais un clic dessus l'ouvre, comme les autres
           decors: { ordi: { lien: 'https://www.onsenbranle.fr' } }, surDecor: d => entrerDans(d.lien) });
       } catch (e) {
