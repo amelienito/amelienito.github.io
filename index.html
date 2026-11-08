@@ -328,9 +328,7 @@
         $('#fiche-num').textContent = `${String(k).padStart(2, '0')} / ${String(ETAPES.length - 1).padStart(2, '0')}`;
         $('#fiche-titre').textContent = e.titre;
         $('#fiche-legende').textContent = e.legende;
-        const astuce = $('#fiche-astuce');
-        astuce.hidden = e.forme !== 'talya';
-        astuce.textContent = matchMedia('(hover: none)').matches ? 'Touche Talya pour la caresser' : 'Clique sur Talya pour la caresser';
+        $('#fiche-astuce').hidden = true;   // Talya se caresse toujours, sans le dire
         const l = $('#fiche-lien');
         if (e.lien) { l.href = e.lien; l.textContent = 'Entrer'; l.classList.remove('ferme'); l.removeAttribute('aria-disabled'); }
         else { l.removeAttribute('href'); l.textContent = k === ETAPES.length - 1 ? 'Bientôt' : 'Pas encore ouvert'; l.classList.add('ferme'); l.setAttribute('aria-disabled', 'true'); }
@@ -397,7 +395,7 @@
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js?v=20261104e');   // ?v= : force le téléphone à reprendre la dernière version
+        const { demarrer } = await import('./scene.js?v=20261108');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
           depart: retourDe > 0 ? retourDe : 0, bloque: () => avantDebut, surBloque: appeler,
           surPret: () => { document.body.classList.add('piece-prete'); if (allerDesQuePret) { allerDesQuePret = false; parcours.aller(1); } },
