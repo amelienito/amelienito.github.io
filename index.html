@@ -211,7 +211,7 @@
       { id: 'fun-facts', titre: 'Fun facts', legende: 'Pour apprendre en s’amusant', lien: 'https://amelienito.github.io/fun-facts/', forme: 'quiz', couleur: '#e3b04b', image: 'img/fun-facts.png' },
       { id: 'cite-3-chinois', titre: 'Cite 3 Chinois', legende: 'Voyons voir si t’es raciste', lien: 'https://amelienito.github.io/cite-trois-chinois/', forme: 'globe', couleur: '#ffc96b', image: 'img/cite-3-chinois.png' },
       { id: 'hb', titre: 'RP Talya', legende: 'Joyeux anniversaire Flo', lien: 'https://amelienito.github.io/Hb/', forme: 'talya', couleur: '#cfe8dc', image: 'img/rp-talya.png' },
-      { id: 'music-discovery', titre: 'Music Discovery', legende: 'Découvrir de la musique sainement', lien: 'https://amelienito.github.io/music-discovery/', forme: 'platine', couleur: '#9fd8ff', image: 'img/music-discovery.png' },
+      { id: 'music-discovery', titre: 'Music Discovery', legende: 'Découvrir de la musique sainement', lien: 'https://amelienito.github.io/music-discovery/', forme: 'platine', couleur: '#9fd8ff', halo: '#ffd39a', image: 'img/music-discovery.png' },
       { id: 'flechettes', titre: 'Raciste ou joueur de fléchettes ?', legende: '(en travaux)', forme: 'flechettes', couleur: '#d9822b', image: 'img/flechettes.png' },
       { id: 'a-venir', titre: 'D\'autres créations arrivent', legende: '…', forme: 'carton', couleur: '#ffd9a0', image: 'img/a-venir.png' },
     ];
@@ -319,7 +319,7 @@
       const fiche = $('#fiche');
       if (touche) { note(k, true); return; }
       note(k, false);
-      if (k === 0) { fiche.classList.remove('visible'); return; }
+      if (k === 0) { clearTimeout(afficher.t); fiche.classList.remove('visible'); return; }   // (une fiche en attente ne revient pas sur l'accueil)
       const e = ETAPES[k];
       fiche.classList.remove('visible');
       document.documentElement.style.setProperty('--accent', e.couleur);
@@ -395,7 +395,7 @@
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js?v=20261108');   // ?v= : force le téléphone à reprendre la dernière version
+        const { demarrer } = await import('./scene.js?v=20261109');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
           depart: retourDe > 0 ? retourDe : 0, bloque: () => avantDebut, surBloque: appeler,
           surPret: () => { document.body.classList.add('piece-prete'); if (allerDesQuePret) { allerDesQuePret = false; parcours.aller(1); } },
