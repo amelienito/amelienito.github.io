@@ -20,6 +20,10 @@ const PLACES = {
   carton:     { pos: [-1.6, 0, 2.3],   face: .5,           vue: [2.2, 1.45, .35] },
 };
 
+// la pièce était un hangar (10 m sur 8,4) : on la resserre, les meubles gardent leur taille, tout se rapproche
+const SX = .78, SZ = .78, HAUT = 2.85;
+Object.values(PLACES).forEach(p => { p.pos[0] *= SX; p.pos[2] *= SZ; });
+
 export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {}, surApproche = () => {}, depart = 0, bloque = () => false, surBloque = () => {}, surPret = () => {} }) {
   const N = etapes.length;
   const cliche = new URLSearchParams(location.search).get('cliche');
@@ -39,7 +43,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
   // la taille de la pièce suit toujours celle de l'écran. Sur iPhone, la page peut démarrer avant que l'écran ait sa vraie
   // taille (ouverte depuis une appli, barre d'adresse qui bouge) : sans nouvelle mesure, l'image restait écrasée en largeur.
-  let tw = 0, th = 0;
+  let tw = 0, th = 0, vues = [], fovObjet = 40, fovAccueil = 30;   // (les vues de la caméra : voir calculerVues)
   function taille() {
     const w = toile.clientWidth || innerWidth, h = toile.clientHeight || innerHeight;
     if (!w || !h || (w === tw && h === th && !taille.force)) return;
@@ -49,8 +53,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     rendu.setPixelRatio(Math.max(.75, Math.min(devicePixelRatio || 1, 2, Math.sqrt((tactile ? 1.5e6 : 2.3e6) / (w * h))) * qualite));
     rendu.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w / h < 0.8 ? 66 : 50;
-    camera.updateProjectionMatrix();
+    calculerVues(); camera.updateProjectionMatrix();
   }
   addEventListener('resize', taille);
   addEventListener('orientationchange', () => setTimeout(taille, 250));
@@ -76,13 +79,13 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   };
   // le parquet, lame par lame
   const bois = ['#8a5d3b', '#94643f', '#7f5534', '#9a6b45'].map(c => M(c, { roughness: .75 }));
-  for (let i = 0; i < 20; i++) boite(.5, .06, 8.4, bois[i % 4], -4.75 + i * .5, -.03, 0).receiveShadow = true;
+  for (let i = 0; i < 20; i++) { const l = boite(.5, .06, 8.4, bois[i % 4], -4.75 + i * .5, -.03, 0); l.receiveShadow = true; l.userData.structure = 'sol'; }
   // les murs (sans mur de face ni plafond : on regarde comme dans une maison de poupée)
   const peinture = M('#dcc19a', { flatShading: false }), plinthe = M('#efe2cb');
-  boite(10.2, 3.2, .12, peinture, 0, 1.6, -4.25);
-  boite(.12, 3.2, 8.6, peinture, -5.06, 1.6, 0);
-  boite(.12, 3.2, 8.6, peinture, 5.06, 1.6, 0);
-  boite(10.1, .12, .05, plinthe, 0, .06, -4.17); boite(.05, .12, 8.4, plinthe, -4.98, .06, 0); boite(.05, .12, 8.4, plinthe, 4.98, .06, 0);
+  boite(10.2, 3.2, .12, peinture, 0, 1.6, -4.25).userData.structure = 'fond';
+  boite(.12, 3.2, 8.6, peinture, -5.06, 1.6, 0).userData.structure = 'cote';
+  boite(.12, 3.2, 8.6, peinture, 5.06, 1.6, 0).userData.structure = 'cote';
+  boite(10.1, .12, .05, plinthe, 0, .06, -4.17).userData.structure = 'sol'; boite(.05, .12, 8.4, plinthe, -4.98, .06, 0).userData.structure = 'sol'; boite(.05, .12, 8.4, plinthe, 4.98, .06, 0).userData.structure = 'sol';
   // la fenêtre : la nuit dehors
   const vitre = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.2), new THREE.MeshBasicMaterial({ map: texteCiel() }));
   vitre.position.set(-.4, 1.85, -4.18); scene.add(vitre);
@@ -95,12 +98,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   tapis.scale.z = .7; tapis.position.set(.3, .015, -.4); tapis.receiveShadow = true; scene.add(tapis);
   const tapis2 = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.45, .035, 10), M('#c9a35a', { roughness: 1 }));
   tapis2.scale.z = .7; tapis2.position.set(.3, .02, -.4); tapis2.receiveShadow = true; scene.add(tapis2);
-  // une plante, parce qu'il faut bien
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(.22, .17, .4, 7), M('#b5603c')); pot.position.set(4.4, .2, -3.7); pot.castShadow = true; scene.add(pot);
-  for (let i = 0; i < 7; i++) {
-    const f = new THREE.Mesh(new THREE.ConeGeometry(.09, .8, 4), M('#4f7a46')); f.position.set(4.4 + Math.cos(i) * .08, .7, -3.7 + Math.sin(i) * .08);
-    f.rotation.set(Math.sin(i * 2) * .5, i, Math.cos(i * 2) * .5); f.castShadow = true; scene.add(f);
-  }
+  plante(scene, M, 4.66, -3.85);   // un ficus lyrata dans le coin du fond, à droite
   // aux murs : ses images, encadrées
   const chargeur = new THREE.TextureLoader();
   function tableau(url, w, h, x, y, z, ry, { cadre = '#1d1b19', bord = .05, epais = .045, dore = false, marge = .055, passe = '#f3eee2', lum = .42 } = {}) {
@@ -118,13 +116,14 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     const image = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); image.position.z = epaisImage; image.receiveShadow = true; g.add(image);
     image.userData.garder = true;   // son image arrive plus tard : on ne la fusionne pas
   }
-  tableau('img/murs/chief-keef.jpg', 1.0, .749, 1.9, 1.54, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .06, dore: true, marge: .06 });   // Chief Keef au jardin d'Éden, au-dessus de la chaîne CD
-  tableau('img/murs/koi.jpg', .66, .66, -2.6, 2.06, -4.18, 0, { cadre: '#5a3820', bord: .05 });                                     // la carpe géante, au-dessus du bureau
-  tableau('img/murs/i-love-ugly.jpg', .8, .535, -4.99, 1.95, -.7, Math.PI / 2, { cadre: '#161514', bord: .045, lum: .55 });   // I Love Ugly (Chester Watson), au-dessus du globe
-  tableau('img/murs/evil-dead-2.jpg', .5, .775, 4.99, 1.76, -1.6, -Math.PI / 2, { cadre: '#b8282e', bord: .035, marge: .045, lum: .75 });   // Evil Dead 2, au-dessus du pupitre de quiz
+  tableau('img/murs/chief-keef.jpg', 1.0, .749, 1.9, 1.66, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .06, dore: true, marge: .06 });   // Chief Keef au jardin d'Éden, au-dessus de la chaîne CD
+  tableau('img/murs/koi.jpg', .72, .72, -2.6, 1.78, -4.18, 0, { cadre: '#5a3820', bord: .05 });                                     // la carpe géante, au-dessus du bureau
+  tableau('img/murs/i-love-ugly.jpg', .9, .602, -4.99, 1.86, -.7, Math.PI / 2, { cadre: '#161514', bord: .045, lum: .55 });   // I Love Ugly (Chester Watson), au-dessus du globe
+  tableau('img/murs/evil-dead-2.jpg', .58, .899, 4.99, 1.86, -1.6, -Math.PI / 2, { cadre: '#b8282e', bord: .035, marge: .045, lum: .75 });   // Evil Dead 2, au-dessus du pupitre de quiz
 
   meubler(scene, { M, boite });
-  tableau('img/murs/seta.jpg', .76, .76, 4.99, 2.2, 2.85, -Math.PI / 2, { cadre: '#b07a48', bord: .05 });   // Seta, au-dessus de la télé
+  tableau('img/murs/seta.jpg', .76, .76, 4.99, 1.98, 2.85, -Math.PI / 2, { cadre: '#b07a48', bord: .05 });   // Seta, au-dessus de la télé
+  resserrer(scene);
   fusionnerDecor(scene);   // (avant d'ajouter les créations : elles, elles bougent)
 
   /* ─────────── les créations ─────────── */
@@ -157,13 +156,28 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   if (cliche) { const i = etapes.findIndex(e => e.id === cliche); if (i >= 0) t = cibleT = i; }
   else if (depart > 0 && depart < N) t = cibleT = depart;   // retour d'une création : on reprend devant son objet
   const souris = new THREE.Vector2();
-  const vues = etapes.map((e, k) => {
-    if (!k) return { pos: new THREE.Vector3(.5, 3.2, 9.6), regard: new THREE.Vector3(.5, 1.1, -1.2) };
-    const p = PLACES[e.forme], [recul, oeil, regard] = p.vue;
-    const n = new THREE.Vector3(Math.sin(p.face), 0, Math.cos(p.face));
-    const base = new THREE.Vector3(...p.pos);
-    return { pos: base.clone().addScaledVector(n, recul).setY(oeil), regard: base.clone().setY(regard) };
-  });
+  // l'objectif : un « 50 mm » plutôt qu'un grand-angle. À l'accueil, on recule loin avec un objectif plus long :
+  // la pièce entière, sans les bords étirés ; devant un objet, un peu plus large. Sur téléphone (en hauteur), plus large.
+  function calculerVues() {
+    const a = camera.aspect || 1, portrait = a < .8;
+    fovAccueil = portrait ? 52 : 30; fovObjet = portrait ? 58 : 40;
+    const allonge = Math.tan(THREE.MathUtils.degToRad(portrait ? 33 : 25)) / Math.tan(THREE.MathUtils.degToRad(fovObjet / 2));   // on recule d'autant que l'objectif s'est resserré
+    const demi = Math.atan(Math.tan(THREE.MathUtils.degToRad(fovAccueil / 2)) * a);   // le demi-angle horizontal
+    // assez loin pour que le bord avant de la pièce (le plus proche) tienne en entier : rien de coupé ni d'étiré au premier plan
+    const regardA = new THREE.Vector3(.2, portrait ? 1.1 : 1.4, -.55), largeur = portrait ? 5.6 : 8.4, avant = 3.3 - regardA.z;
+    const dir = new THREE.Vector3(0, .25, 1).normalize();
+    const d = Math.min(22, ((largeur / 2) / Math.tan(demi) + avant) / dir.z);
+    vues = etapes.map((e, k) => {
+      if (!k) return { pos: regardA.clone().addScaledVector(dir, d), regard: regardA.clone(), fov: fovAccueil };
+      const p = PLACES[e.forme], [recul, oeil, regard] = p.vue;
+      const n = new THREE.Vector3(Math.sin(p.face), 0, Math.cos(p.face));
+      const base = new THREE.Vector3(...p.pos);
+      return { pos: base.clone().addScaledVector(n, recul * allonge).setY(oeil), regard: base.clone().setY(regard), fov: fovObjet };
+    });
+    calculerVues.allonge = allonge;
+  }
+  calculerVues.allonge = 1;
+  if (camera.aspect) calculerVues();
   const regard = new THREE.Vector3(), _vers = new THREE.Vector3();
   function placer(temps) {
     const k = Math.floor(t), f = t - k, b = Math.min(N - 1, k + 1);
@@ -172,6 +186,8 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     const recul = Math.sin(l * Math.PI) * .35;
     camera.position.lerpVectors(vues[k].pos, vues[b].pos, l);
     regard.lerpVectors(vues[k].regard, vues[b].regard, l);
+    const fov = vues[k].fov + (vues[b].fov - vues[k].fov) * l;
+    if (Math.abs(camera.fov - fov) > .01) { camera.fov = fov; camera.updateProjectionMatrix(); }
     const vers = _vers.copy(camera.position).sub(regard).setY(0).normalize();   // (un seul vecteur réutilisé : pas de déchets à chaque image)
     camera.position.addScaledVector(vers, recul * 2).y += recul;
     // l'approche d'un objet caché (l'ordi) : on glisse depuis la vue en cours jusqu'à lui
@@ -182,7 +198,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   let approche = null, melange = 0;
   function vueDe(forme, [recul, oeil, haut]) {
     const p = PLACES[forme], n = new THREE.Vector3(Math.sin(p.face), 0, Math.cos(p.face)), base = new THREE.Vector3(...p.pos);
-    return { pos: base.clone().addScaledVector(n, recul).setY(oeil), regard: base.clone().setY(haut) };
+    return { pos: base.clone().addScaledVector(n, recul * calculerVues.allonge).setY(oeil), regard: base.clone().setY(haut) };
   }
   function quitterApproche() { if (approche && approche.actif) { approche.actif = false; surApproche(null); } }
 
@@ -582,7 +598,7 @@ function canapeEtTable(g, { M, boite }) {
   boite(.05, .014, .16, M('#16161a'), .26, .41, -.06, table).rotation.y = .3;
   boite(.2, .012, .26, M('#2f4a5a'), -.22, .408, -.16, table).rotation.y = -.25; boite(.18, .01, .24, M('#c8572f'), -.2, .419, -.15, table).rotation.y = .15;
   // le lampadaire : une lanterne de papier (façon Akari d'Isamu Noguchi) sur trois pieds fins, lumière douce
-  const lamp = new THREE.Group(); lamp.position.set(4.45, 0, 4.0); g.add(lamp);
+  const lamp = new THREE.Group(); lamp.position.set(-3.8, 0, -3.78); g.add(lamp);   // dans le coin du fond, entre la tour à CD et le bureau (plus devant la télé)
   const fer = M('#1d1c1f', { roughness: .5, metalness: .3 });
   [0, 2.094, 4.188].forEach(a => { const p = cylindre(lamp, .008, .008, .98, 5, fer, Math.cos(a) * .1, .48, Math.sin(a) * .1); p.rotation.set(Math.sin(a) * -.1, 0, Math.cos(a) * .1); });
   cylindre(lamp, .008, .008, .16, 5, fer, 0, 1.0, 0);
@@ -643,6 +659,53 @@ function meubler(scene, { M, boite }) {
    Chaque boîte du décor (lames de parquet, planches, CD posés à plat, pieds de table…) était dessinée à part,
    trois fois par image avec les ombres. Ici, tout ce qui ne bouge pas et se ressemble (même couleur, même matière)
    devient un seul objet. Ce qui a une image (tableaux, écrans), ce qui est transparent ou en série (InstancedMesh) reste à part. */
+/* la pièce resserrée : chaque meuble se rapproche du centre (position × SX, SZ), sans changer de taille ;
+   le sol et les murs, eux, rétrécissent ; les murs restent juste derrière ce qui y est accroché ; le plafond descend */
+function resserrer(scene) {
+  const k = HAUT / 3.2;
+  scene.children.slice().forEach(o => {
+    if (o.isLine) { o.geometry.scale(SX, 1, SZ); o.geometry.translate(0, HAUT - 3.2 + .05, 0); return; }   // la guirlande
+    const st = o.userData.structure;
+    if (st === 'fond') { o.scale.x *= SX; o.scale.y = k; o.position.y = HAUT / 2; o.position.z = -4.19 * SZ - .06; return; }
+    if (st === 'cote') { o.scale.z *= SZ; o.scale.y = k; o.position.y = HAUT / 2; o.position.x = Math.sign(o.position.x) * (5.0 * SX + .06); return; }
+    o.position.x *= SX; o.position.z *= SZ;
+    if (st === 'sol') { o.scale.x *= SX; o.scale.z *= SZ; }
+    if (o.isMesh && o.position.y > 2.6 && o.position.y < 3.1) o.position.y += HAUT - 3.2 + .05;   // les ampoules de la guirlande, sous le haut du mur
+  });
+}
+
+/* un monstera : un pot en terre cuite, de grandes feuilles larges au bout de longues tiges qui s'écartent en gerbe */
+function plante(scene, M, x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+  const terre = M('#b5643c', { flatShading: false, roughness: .9 }), bord = M('#a35733', { flatShading: false, roughness: .9 });
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(.21, .16, .38, 22), terre); pot.position.y = .19; g.add(pot);
+  const levre = new THREE.Mesh(new THREE.CylinderGeometry(.225, .215, .05, 22), bord); levre.position.y = .375; g.add(levre);
+  const sol = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, .02, 16), M('#3a2618')); sol.position.y = .39; g.add(sol);
+  const soucoupe = new THREE.Mesh(new THREE.CylinderGeometry(.22, .2, .03, 22), bord); soucoupe.position.y = .015; g.add(soucoupe);
+  const tige = M('#56803f', { flatShading: false });
+  const verts = [M('#2f5d34', { flatShading: false, roughness: .55 }), M('#3e7340', { flatShading: false, roughness: .55 }), M('#274f2c', { flatShading: false, roughness: .55 })];
+  // la feuille : un cœur large (une sphère aplatie, plus large à la base, une encoche au bout)
+  const feuille = new THREE.SphereGeometry(1, 16, 10);
+  {
+    const pa = feuille.attributes.position;
+    for (let i = 0; i < pa.count; i++) { const zz = pa.getZ(i); pa.setX(i, pa.getX(i) * (1 - zz * .18)); if (zz > .85) pa.setZ(i, zz - (1 - Math.abs(pa.getX(i))) * .12); }
+    feuille.computeVertexNormals();
+  }
+  const N = 11, or = Math.PI * (3 - Math.sqrt(5)), _a = new THREE.Vector3(), _b = new THREE.Vector3();
+  for (let i = 0; i < N; i++) {
+    const a = i * or + .4, loin = .2 + (i % 3) * .07, h = .62 + (i % 4) * .13 + (i / N) * .12;
+    _a.set(0, .38, 0); _b.set(Math.cos(a) * loin, h, Math.sin(a) * loin);
+    const l = _a.distanceTo(_b), t = new THREE.Mesh(new THREE.CylinderGeometry(.007, .009, l, 6), tige);
+    t.position.copy(_a).add(_b).multiplyScalar(.5); t.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), _b.clone().sub(_a).normalize()); g.add(t);
+    const pivot = new THREE.Group(); pivot.position.copy(_b); pivot.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)); g.add(pivot);
+    const penche = new THREE.Group(); penche.rotation.x = .18 + (i % 3) * .14; pivot.add(penche);
+    const taille = .15 + (i % 3) * .025;
+    const f = new THREE.Mesh(feuille, verts[i % 3]); f.scale.set(taille * .95, .012, taille * 1.15); f.position.z = taille * 1.05; penche.add(f);
+    const nervure = new THREE.Mesh(new THREE.BoxGeometry(.006, .004, taille * 2), tige); nervure.position.set(0, .011, taille * 1.05); penche.add(nervure);
+  }
+  g.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+}
+
 function fusionnerDecor(racine) {
   racine.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(racine.matrixWorld).invert(), _m = new THREE.Matrix4();   // (marche aussi dans un objet déjà placé)
