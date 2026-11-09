@@ -164,7 +164,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     const allonge = Math.tan(THREE.MathUtils.degToRad(portrait ? 33 : 25)) / Math.tan(THREE.MathUtils.degToRad(fovObjet / 2));   // on recule d'autant que l'objectif s'est resserré
     const demi = Math.atan(Math.tan(THREE.MathUtils.degToRad(fovAccueil / 2)) * a);   // le demi-angle horizontal
     // assez loin pour que le bord avant de la pièce (le plus proche) tienne en entier : rien de coupé ni d'étiré au premier plan
-    const regardA = new THREE.Vector3(.2, portrait ? 1.1 : 1.4, -.55), largeur = portrait ? 5.6 : 8.4, avant = 3.3 - regardA.z;
+    const regardA = new THREE.Vector3(.2, portrait ? 1.1 : 1.22, -.55), largeur = portrait ? 5.6 : 8.4, avant = 3.3 - regardA.z;
     const dir = new THREE.Vector3(0, .25, 1).normalize();
     const d = Math.min(22, ((largeur / 2) / Math.tan(demi) + avant) / dir.z);
     vues = etapes.map((e, k) => {
