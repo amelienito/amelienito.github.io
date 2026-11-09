@@ -413,74 +413,32 @@ function cylindre(parent, r1, r2, h, n, mat, x, y, z) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, n), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m;
 }
 
-// l'écran de la télé : l'accueil de la PS5, avec les créations d'Amélien comme jeux. Toutes les 7 secondes,
-// la sélection passe au jeu suivant et son illustration remplit l'écran, comme quand on fait défiler la console.
-const JEUX_CONSOLE = [
-  { titre: 'Cite 3 Chinois', sous: 'Voyons voir si t’es raciste', image: 'img/cite-3-chinois.png', trophees: '12/40', progres: .42 },
-  { titre: 'Fun facts', sous: 'Pour apprendre en s’amusant', image: 'img/fun-facts.png', trophees: '7/25', progres: .28 },
-  { titre: 'RP Talya', sous: 'Joyeux anniversaire Flo', image: 'img/rp-talya.png', trophees: '30/30', progres: 1 },
-  { titre: 'Music Discovery', sous: 'Découvrir de la musique sainement', image: 'img/music-discovery.png', trophees: '18/50', progres: .6 },
-  { titre: 'Raciste ou joueur de fléchettes ?', sous: 'Bientôt', image: 'img/flechettes.png', trophees: '0/12', progres: 0 },
-];
-function ecranConsole() {
+// l'écran de la télé : un film en pause (pas les créations d'Amélien : elles ont chacune leur place dans la pièce).
+// Un plan large au crépuscule, en cinémascope, la barre de lecture et le sous-titre de la réplique en cours.
+function ecranFilm() {
   const W = 1280, H = 720, S = '"Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif';
-  const images = JEUX_CONSOLE.map(j => { const im = new Image(); im.src = j.image; im.onload = () => dessiner(); return im; });
-  let sel = 0, tex = null;
-  const pret = im => im.complete && im.naturalWidth;
-  function couvrir(x, im, X, Y, w, h) {   // l'image remplit le cadre, recadrée au centre
-    const r = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * r, ih = im.naturalHeight * r;
-    x.drawImage(im, X + (w - iw) / 2, Y + (h - ih) / 2, iw, ih);
-  }
-  function dessin(x, w, h) {
-    const j = JEUX_CONSOLE[sel], im = images[sel];
-    x.fillStyle = '#0b0d1c'; x.fillRect(0, 0, w, h);
-    if (im && pret(im)) { x.save(); x.globalAlpha = .95; couvrir(x, im, 0, 0, w, h); x.restore(); }
-    // des voiles pour lire : à gauche, en haut, en bas ; et un léger vignetage
-    const g1 = x.createLinearGradient(0, 0, w * .75, 0); g1.addColorStop(0, 'rgba(6,8,20,.92)'); g1.addColorStop(.55, 'rgba(6,8,20,.45)'); g1.addColorStop(1, 'rgba(6,8,20,0)'); x.fillStyle = g1; x.fillRect(0, 0, w, h);
-    const g2 = x.createLinearGradient(0, 0, 0, 240); g2.addColorStop(0, 'rgba(6,8,20,.85)'); g2.addColorStop(1, 'rgba(6,8,20,0)'); x.fillStyle = g2; x.fillRect(0, 0, w, 240);
-    const g3 = x.createLinearGradient(0, h - 200, 0, h); g3.addColorStop(0, 'rgba(6,8,20,0)'); g3.addColorStop(1, 'rgba(6,8,20,.8)'); x.fillStyle = g3; x.fillRect(0, h - 200, w, 200);
-    // la barre du haut
-    x.fillStyle = '#fff'; x.font = `700 26px ${S}`; x.fillText('Jeux', 72, 62); x.globalAlpha = .5; x.fillText('Multimédia', 146, 62); x.globalAlpha = 1;
-    x.fillStyle = '#fff'; x.fillRect(72, 74, 54, 3);
-    x.strokeStyle = '#fff'; x.lineWidth = 2.8;
-    x.beginPath(); x.arc(w - 300, 54, 11, 0, 7); x.moveTo(w - 292, 62); x.lineTo(w - 283, 71); x.stroke();
-    x.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; x.moveTo(w - 240 + Math.cos(a) * 8, 54 + Math.sin(a) * 8); x.lineTo(w - 240 + Math.cos(a) * 13, 54 + Math.sin(a) * 13); } x.stroke(); x.beginPath(); x.arc(w - 240, 54, 6, 0, 7); x.stroke();
-    x.fillStyle = '#c8572f'; x.beginPath(); x.arc(w - 182, 54, 17, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = `800 16px ${S}`; x.textAlign = 'center'; x.fillText('A', w - 182, 60);
-    x.font = `600 24px ${S}`; x.textAlign = 'right'; x.fillText('21:04', w - 72, 63); x.textAlign = 'left';
-    // la rangée : la bibliothèque, les jeux (le sélectionné en grand, cadre blanc, et son nom dessous), le Store
-    let X = 72;
-    const tuile = (T, Y, fond, contenu, choisi) => {
-      x.save(); if (choisi) { x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 28; x.shadowOffsetY = 10; }
-      arrondi(x, X, Y, T, T, 14); x.fillStyle = fond; x.fill(); x.restore();
-      x.save(); arrondi(x, X, Y, T, T, 14); x.clip(); contenu(X, Y, T); x.restore();
-      if (choisi) { x.strokeStyle = '#fff'; x.lineWidth = 4; arrondi(x, X - 7, Y - 7, T + 14, T + 14, 19); x.stroke(); }
-    };
-    tuile(104, 112, 'rgba(40,44,58,.92)', (a, b, T) => { x.fillStyle = 'rgba(255,255,255,.9)'; for (let k = 0; k < 3; k++) { arrondi(x, a + 30 + k * 16, b + 30, 10, 44, 3); x.fill(); } }, false); X += 104 + 18;
-    JEUX_CONSOLE.forEach((jj, k) => {
-      const choisi = k === sel, T = choisi ? 150 : 104, Y = choisi ? 92 : 112;
-      tuile(T, Y, '#20263a', (a, b, t) => { if (pret(images[k])) couvrir(x, images[k], a, b, t, t); }, choisi);
-      if (choisi) { x.fillStyle = '#fff'; x.font = `600 18px ${S}`; x.fillText(jj.titre.length > 18 ? jj.titre.slice(0, 17) + '…' : jj.titre, X, Y + T + 34); }
-      X += T + (choisi ? 26 : 18);
-    });
-    tuile(104, 112, '#1f5fd1', (a, b, T) => { x.strokeStyle = '#fff'; x.lineWidth = 3.5; arrondi(x, a + 34, b + 44, 36, 30, 5); x.stroke(); x.beginPath(); x.arc(a + 52, b + 44, 10, Math.PI, 0); x.stroke(); }, false);
-    // le jeu choisi, en grand
-    x.fillStyle = '#fff'; x.font = `800 ${j.titre.length > 18 ? 46 : 64}px ${S}`; x.fillText(j.titre, 72, 418);
-    x.font = `500 22px ${S}`; x.globalAlpha = .78; x.fillText(j.sous, 72, 456); x.globalAlpha = 1;
-    x.fillStyle = '#fff'; arrondi(x, 72, 486, 180, 58, 29); x.fill();
-    x.fillStyle = '#0b0d1c'; x.font = `700 24px ${S}`; x.textAlign = 'center'; x.fillText('Jouer', 162, 523); x.textAlign = 'left';
-    x.fillStyle = 'rgba(255,255,255,.2)'; x.beginPath(); x.arc(296, 515, 29, 0, 7); x.fill();
-    x.fillStyle = '#fff'; [284, 296, 308].forEach(cx => { x.beginPath(); x.arc(cx, 515, 3, 0, 7); x.fill(); });
-    // la progression et les trophées
-    x.fillStyle = 'rgba(255,255,255,.22)'; arrondi(x, 72, 584, 320, 7, 3.5); x.fill();
-    if (j.progres > 0) { x.fillStyle = '#fff'; arrondi(x, 72, 584, Math.max(8, 320 * j.progres), 7, 3.5); x.fill(); }
-    x.font = `500 18px ${S}`; x.globalAlpha = .8; x.fillText(`Progression ${Math.round(j.progres * 100)} %   ·   Trophées ${j.trophees}`, 72, 622); x.globalAlpha = 1;
-    // en bas à droite : les cartes « activités », en verre dépoli
-    [0, 1, 2].forEach(k => { const cx = w - 72 - 230 * (3 - k) + 10; x.fillStyle = 'rgba(255,255,255,.12)'; arrondi(x, cx, h - 170, 216, 120, 14); x.fill(); x.fillStyle = 'rgba(255,255,255,.75)'; x.font = `600 15px ${S}`; x.fillText(['Reprendre', 'Défi du jour', 'Trophée proche'][k], cx + 18, h - 136); x.fillStyle = 'rgba(255,255,255,.35)'; arrondi(x, cx + 18, h - 112, 120, 8, 4); x.fill(); arrondi(x, cx + 18, h - 94, 80, 8, 4); x.fill(); });
-  }
-  function dessiner() { if (!tex) return; const x = tex.image.getContext('2d'); x.clearRect(0, 0, W, H); dessin(x, W, H); tex.needsUpdate = true; }
-  tex = toileTexte(W, H, dessin);
-  setInterval(() => { if (document.hidden) return; sel = (sel + 1) % JEUX_CONSOLE.length; dessiner(); }, 7000);
-  return tex;
+  return toileTexte(W, H, (x, w, h) => {
+    x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
+    const haut = 92, bas = h - 92;   // les bandes noires du cinémascope
+    x.save(); x.beginPath(); x.rect(0, haut, w, bas - haut); x.clip();
+    const ciel = x.createLinearGradient(0, haut, 0, bas); ciel.addColorStop(0, '#2b2a4a'); ciel.addColorStop(.45, '#b4566a'); ciel.addColorStop(.72, '#f29a5c'); ciel.addColorStop(1, '#f6c27a');
+    x.fillStyle = ciel; x.fillRect(0, haut, w, bas - haut);
+    x.fillStyle = 'rgba(255,236,190,.9)'; x.beginPath(); x.arc(w * .63, bas - 150, 46, 0, 7); x.fill();   // le soleil bas
+    const colline = (y0, amp, f, ph, c) => { x.fillStyle = c; x.beginPath(); x.moveTo(0, bas); for (let X = 0; X <= w; X += 16) x.lineTo(X, y0 + Math.sin(X * f + ph) * amp + Math.sin(X * f * 2.7 + ph) * amp * .35); x.lineTo(w, bas); x.fill(); };
+    colline(bas - 120, 22, .006, 1.2, '#8a4a5a'); colline(bas - 80, 18, .009, 2.6, '#5a2f45'); colline(bas - 40, 10, .012, .4, '#2a1828');
+    // deux silhouettes sur la crête, de dos, qui regardent le soleil
+    x.fillStyle = '#1c1020';
+    [[w * .4, 1], [w * .44, .92]].forEach(([cx, k]) => { const y = bas - 48; x.beginPath(); x.arc(cx, y - 66 * k, 11 * k, 0, 7); x.fill(); arrondi(x, cx - 13 * k, y - 56 * k, 26 * k, 56 * k, 9 * k); x.fill(); });
+    x.restore();
+    // le sous-titre, et la lecture en pause
+    x.font = `500 30px ${S}`; x.textAlign = 'center'; x.lineWidth = 6; x.strokeStyle = 'rgba(0,0,0,.75)'; x.fillStyle = '#fff';
+    x.strokeText('— On reste encore un peu ?', w / 2, bas - 26); x.fillText('— On reste encore un peu ?', w / 2, bas - 26);
+    x.textAlign = 'left';
+    x.fillStyle = 'rgba(255,255,255,.28)'; arrondi(x, 72, h - 54, w - 144, 6, 3); x.fill();
+    x.fillStyle = '#fff'; arrondi(x, 72, h - 54, (w - 144) * .62, 6, 3); x.fill(); x.beginPath(); x.arc(72 + (w - 144) * .62, h - 51, 9, 0, 7); x.fill();
+    x.font = `600 20px ${S}`; x.globalAlpha = .85; x.fillText('1:12:48', 72, h - 18); x.textAlign = 'right'; x.fillText('1:58:03', w - 72, h - 18); x.textAlign = 'left'; x.globalAlpha = 1;
+    x.fillStyle = 'rgba(255,255,255,.9)'; x.fillRect(w / 2 - 20, h / 2 - 30, 14, 60); x.fillRect(w / 2 + 6, h / 2 - 30, 14, 60);   // pause
+  });
 }
 
 // un CD vu côté gravure : l'argent, les reflets arc-en-ciel qui tournent, le moyeu transparent et son trou
@@ -525,7 +483,7 @@ function coinTele(g, { M, boite }) {
   // la télé
   boite(.62, .015, .2, noir, 0, .493, -.02, g); boite(.12, .13, .05, noir, 0, .56, -.05, g);
   boite(1.64, .93, .045, noir, 0, 1.1, -.05, g);
-  const ecran = new THREE.Mesh(new THREE.PlaneGeometry(1.56, .87), new THREE.MeshBasicMaterial({ map: ecranConsole(), toneMapped: false, color: '#e2e2e2' }));
+  const ecran = new THREE.Mesh(new THREE.PlaneGeometry(1.56, .87), new THREE.MeshBasicMaterial({ map: ecranFilm(), toneMapped: false, color: '#e2e2e2' }));
   ecran.position.set(0, 1.1, -.0265); g.add(ecran);
   boite(1.2, .07, .1, M('#18181a', { roughness: .8 }), 0, .52, .11, g);                                            // la barre de son
   // la PS5, debout à droite : deux grandes ailes blanches qui s'évasent en haut, le cœur noir, la lueur bleue
