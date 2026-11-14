@@ -9,10 +9,10 @@ import * as THREE from './vendor/three.min.js';   // three.js compacté (vendor/
 
 /* où se trouve chaque objet dans la pièce, et d'où on le regarde
    pos : position au sol · face : direction vers laquelle il est tourné (radians)
-   vue : [recul, hauteur de l'œil, hauteur du regard] */
+   vue : [recul, hauteur de l'œil, hauteur du regard, recul sur téléphone, pas de côté sur téléphone] */
 const PLACES = {
   ordi:       { pos: [-2.6, 0, -3.35], face: 0,            vue: [2.3, 1.55, 1.05] },
-  platine:    { pos: [2.3, 0, -3.62],  face: 0,            vue: [2.6, 1.5, .92, 4.6] },
+  platine:    { pos: [2.3, 0, -3.62],  face: 0,            vue: [2.6, 1.5, .92, 4.6, -.9] },
   globe:      { pos: [-4.1, 0, -.4],   face: Math.PI / 2,  vue: [2.75, 1.64, 1.34] },
   talya:      { pos: [3.1, 0, 1.1],    face: -2.4,         vue: [2.4, 1.35, .35] },
   quiz:       { pos: [4.5, 0, -1.6],   face: -Math.PI / 2, vue: [3.0, 1.6, 1.24] },
@@ -24,7 +24,7 @@ const PLACES = {
 const SX = .9, SZ = .95, HAUT = 2.85;
 Object.values(PLACES).forEach(p => { p.pos[0] *= SX; p.pos[2] *= SZ; });
 
-export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {}, surApproche = () => {}, depart = 0, bloque = () => false, surBloque = () => {}, surPret = () => {} }) {
+export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {}, surApproche = () => {}, depart = 0, bloque = () => false, surBloque = () => {}, surPret = () => {}, bande = () => null }) {
   const N = etapes.length;
   const cliche = new URLSearchParams(location.search).get('cliche');
 
@@ -40,10 +40,13 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   rendu.toneMappingExposure = 1.05;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#15110d');
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 60);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 90);
   // la taille de la pièce suit toujours celle de l'écran. Sur iPhone, la page peut démarrer avant que l'écran ait sa vraie
   // taille (ouverte depuis une appli, barre d'adresse qui bouge) : sans nouvelle mesure, l'image restait écrasée en largeur.
   let tw = 0, th = 0, vues = [], fovObjet = 40, fovAccueil = 30;   // (les vues de la caméra : voir calculerVues)
+  const _cam = new THREE.PerspectiveCamera(), _p = new THREE.Vector3(), COINS = [];
+  for (const x of [-1, 1]) for (const y of [0, 1]) for (const z of [-1, 1]) COINS.push([x * (5 * SX + .12), y * (HAUT + .04), z < 0 ? -4.19 * SZ - .12 : 4.2 * SZ]);
+  let dernierCadre = '';   // (pour la vue d'accueil : voir vueAccueil)
   function taille() {
     const w = toile.clientWidth || innerWidth, h = toile.clientHeight || innerHeight;
     if (!w || !h || (w === tw && h === th && !taille.force)) return;
@@ -69,6 +72,8 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   plafonnier.castShadow = true; plafonnier.shadow.mapSize.set(tactile ? 512 : 1024, tactile ? 512 : 1024); plafonnier.shadow.bias = -.0008;
   scene.add(plafonnier, plafonnier.target);
   const nuit = new THREE.DirectionalLight('#9aa8d0', .22); nuit.position.set(-1, 3, -8); scene.add(nuit);
+  // une lumière d'appoint venue de devant, sans ombre : ce qui nous fait face (le carton, le dos du canapé) n'est plus un aplat sombre
+  const appoint = new THREE.DirectionalLight('#ffd2a6', .38); appoint.position.set(1.5, 2.2, 9); scene.add(appoint);
   if (!tactile) { const braise = new THREE.PointLight('#ff9a52', 7, 9, 1.6); braise.position.set(2.2, 1.6, .6); scene.add(braise); }   // une lueur chaude côté canapé (pas sur téléphone : une lampe de plus coûte)
 
   /* ─────────── la pièce ─────────── */
@@ -125,6 +130,15 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   tableau('img/murs/seta.jpg', .76, .76, 4.99, 1.98, 2.85, -Math.PI / 2, { cadre: '#b07a48', bord: .05 });   // Seta, au-dessus de la télé
   resserrer(scene);
   fusionnerDecor(scene);   // (avant d'ajouter les créations : elles, elles bougent)
+  // vue de dehors, c'est une maison de poupée (ni mur de face ni plafond). Dès qu'on est dedans, la pièce est entière :
+  // le mur de face et le plafond n'ont qu'une face, tournée vers l'intérieur. De dehors on voit à travers, de dedans ils ferment la pièce.
+  {
+    const LX = 5 * SX + .06, ZF = 4.2 * SZ, ZB = -4.19 * SZ;
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, HAUT), peinture); face.position.set(0, HAUT / 2, ZF); face.rotation.y = Math.PI; face.receiveShadow = true; scene.add(face);
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, .12), plinthe); pl.position.set(0, .06, ZF - .012); pl.rotation.y = Math.PI; scene.add(pl);
+    const plafond = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, ZF - ZB + .12), new THREE.MeshStandardMaterial({ color: '#f0e2c6', roughness: .95, emissive: '#8a643c', emissiveIntensity: .62 }));
+    plafond.position.set(0, HAUT, (ZF + ZB) / 2 - .06); plafond.rotation.x = Math.PI / 2; scene.add(plafond);
+  }
 
   /* ─────────── les créations ─────────── */
   const objets = [];
@@ -158,21 +172,47 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   const souris = new THREE.Vector2();
   // l'objectif : un « 50 mm » plutôt qu'un grand-angle. À l'accueil, on recule loin avec un objectif plus long :
   // la pièce entière, sans les bords étirés ; devant un objet, un peu plus large. Sur téléphone (en hauteur), plus large.
+  // l'accueil : toute la pièce, vue d'un peu haut et de loin (peu de perspective : une boîte, pas une scène de théâtre évasée),
+  // posée dans la bande libre de l'écran, entre le titre et le bouton, quelle que soit la taille de l'écran
+  function lireCadre() { const c = bande() || {}; return { haut: Math.max(0, Math.min(.6, c.haut ?? .27)), bas: Math.max(.62, Math.min(1, c.bas ?? .84)) }; }
+  function vueAccueil(a, portrait) {
+    const c = lireCadre(); dernierCadre = c.haut.toFixed(3) + '|' + c.bas.toFixed(3);
+    const haut = 1 - 2 * c.haut, bas = 1 - 2 * c.bas, cote = portrait ? .985 : .94;
+    const elev = THREE.MathUtils.degToRad(portrait ? 42 : 22), demiFov = Math.tan(THREE.MathUtils.degToRad(fovAccueil / 2));
+    const dir = new THREE.Vector3(0, Math.sin(elev), Math.cos(elev)), monte = new THREE.Vector3(0, Math.cos(elev), -Math.sin(elev));
+    const cible = new THREE.Vector3(0, HAUT * .4, 0);
+    _cam.fov = fovAccueil; _cam.aspect = a; _cam.near = .5; _cam.far = 200; _cam.updateProjectionMatrix();
+    const mesurer = d => {
+      _cam.position.copy(cible).addScaledVector(dir, d); _cam.lookAt(cible); _cam.updateMatrixWorld();
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+      for (const [x, y, z] of COINS) { _p.set(x, y, z).project(_cam); x0 = Math.min(x0, _p.x); x1 = Math.max(x1, _p.x); y0 = Math.min(y0, _p.y); y1 = Math.max(y1, _p.y); }
+      return { x0, x1, y0, y1 };
+    };
+    let pres = 6, loin = 58;
+    for (let i = 0; i < 20; i++) { const d = (pres + loin) / 2, m = mesurer(d); if (Math.max(-m.x0, m.x1) <= cote && m.y1 - m.y0 <= haut - bas) loin = d; else pres = d; }
+    for (let i = 0; i < 4; i++) { const m = mesurer(loin); cible.addScaledVector(monte, ((m.y0 + m.y1) / 2 - (haut + bas) / 2) * loin * demiFov); }
+    return { pos: cible.clone().addScaledVector(dir, loin), regard: cible.clone(), fov: fovAccueil };
+  }
   function calculerVues() {
     const a = camera.aspect || 1, portrait = a < .8;
-    fovAccueil = portrait ? 52 : 30; fovObjet = portrait ? 58 : 40;
+    fovAccueil = portrait ? 26 : 24; fovObjet = portrait ? 58 : 40;
     const allonge = Math.tan(THREE.MathUtils.degToRad(portrait ? 33 : 25)) / Math.tan(THREE.MathUtils.degToRad(fovObjet / 2));   // on recule d'autant que l'objectif s'est resserré
-    const demi = Math.atan(Math.tan(THREE.MathUtils.degToRad(fovAccueil / 2)) * a);   // le demi-angle horizontal
-    // assez loin pour que le bord avant de la pièce (le plus proche) tienne en entier : rien de coupé ni d'étiré au premier plan
-    const regardA = new THREE.Vector3(.2, portrait ? 1.1 : 1.22, -.55), largeur = (portrait ? 5.6 : 8.4) * SX / .78, avant = 4.23 * SZ - regardA.z;
-    const dir = new THREE.Vector3(0, .25, 1).normalize();
-    const d = Math.min(22, ((largeur / 2) / Math.tan(demi) + avant) / dir.z);
+    const accueil = vueAccueil(a, portrait);
     vues = etapes.map((e, k) => {
-      if (!k) return { pos: regardA.clone().addScaledVector(dir, d), regard: regardA.clone(), fov: fovAccueil };
-      const p = PLACES[e.forme], [r0, oeil, regard, rPortrait] = p.vue, recul = portrait && rPortrait ? rPortrait : r0;   // (4e valeur : le recul sur téléphone, pour les objets larges)
+      if (!k) return accueil;
+      const p = PLACES[e.forme], [r0, oeil, regard, rPortrait, cote] = p.vue, recul = portrait && rPortrait ? rPortrait : r0;   // (4e valeur : le recul sur téléphone, pour les objets larges)
       const n = new THREE.Vector3(Math.sin(p.face), 0, Math.cos(p.face));
       const base = new THREE.Vector3(...p.pos);
-      return { pos: base.clone().addScaledVector(n, recul * allonge).setY(oeil), regard: base.clone().setY(regard), fov: fovObjet };
+      const v = { pos: base.clone().addScaledVector(n, recul * allonge).setY(oeil), regard: base.clone().setY(regard), fov: fovObjet };
+      // sur téléphone, le titre et « Entrer » occupent le bas de l'écran : on glisse la vue pour que l'objet se pose au-dessus, pas dessous
+      if (portrait) {
+        if (cote) v.pos.x += Math.cos(p.face) * cote, v.pos.z -= Math.sin(p.face) * cote;   // un pas de côté : sans lui, on regarde la chaîne par-dessus les oreilles de Talya
+        const vers = v.regard.clone().sub(v.pos), dist = vers.length(); vers.normalize();
+        const droite = new THREE.Vector3().crossVectors(vers, new THREE.Vector3(0, 1, 0)).normalize(), monte = new THREE.Vector3().crossVectors(droite, vers);
+        const dec = .2 * dist * Math.tan(THREE.MathUtils.degToRad(fovObjet / 2));
+        v.regard.addScaledVector(monte, -dec);   // (on baisse le regard, l'œil reste à sa hauteur : il ne plonge pas dans le canapé)
+      }
+      return v;
     });
     calculerVues.allonge = allonge;
   }
@@ -187,7 +227,8 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     camera.position.lerpVectors(vues[k].pos, vues[b].pos, l);
     regard.lerpVectors(vues[k].regard, vues[b].regard, l);
     const fov = vues[k].fov + (vues[b].fov - vues[k].fov) * l;
-    if (Math.abs(camera.fov - fov) > .01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    const proche = Math.max(.05, camera.position.distanceTo(regard) - 11);   // de loin, on n'a pas besoin de voir à 5 cm : la profondeur gagne en précision (tapis, cadres)
+    if (Math.abs(camera.fov - fov) > .01 || Math.abs(camera.near - proche) > .02) { camera.fov = fov; camera.near = proche; camera.updateProjectionMatrix(); }
     const vers = _vers.copy(camera.position).sub(regard).setY(0).normalize();   // (un seul vecteur réutilisé : pas de déchets à chaque image)
     camera.position.addScaledVector(vers, recul * 2).y += recul;
     // l'approche d'un objet caché (l'ordi) : on glisse depuis la vue en cours jusqu'à lui
@@ -289,7 +330,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
     melange += ((approche && approche.actif ? 1 : 0) - melange) * (reduit ? 1 : 1 - Math.pow(.006, dt));
     if (approche && !approche.actif && melange < .0005) approche = null;
     if (Math.abs(cibleT - t) < .0005) t = cibleT;
-    if (++verifTaille % 30 === 0) taille();   // filet de sécurité : deux fois par seconde, on revérifie la taille
+    if (++verifTaille % 30 === 0) { const c = lireCadre(); if (c.haut.toFixed(3) + '|' + c.bas.toFixed(3) !== dernierCadre) taille.force = true; taille(); }   // filet de sécurité : deux fois par seconde, on revérifie la taille
     placer(temps);
     const ici = Math.round(t);
     if (ici !== derniere) { derniere = ici; surEtape(ici, {}); }

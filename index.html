@@ -49,7 +49,7 @@
     .outil:hover { border-color: rgba(230,220,194,.6); }
     .outil[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
-    .titre-grand { position: fixed; left: 0; right: 0; top: 18vh; text-align: center; padding: 0 16px; transition: opacity .7s, transform .9s cubic-bezier(.2,.8,.2,1); }
+    .titre-grand { position: fixed; left: 0; right: 0; top: clamp(52px, 9.5vh, 120px); text-align: center; padding: 0 16px; transition: opacity .7s, transform .9s cubic-bezier(.2,.8,.2,1); }
     .titre-grand b { display: block; font: 700 clamp(2.6rem, 10vw, 7.4rem)/.9 "Inter Tight", Helvetica, Arial, sans-serif; letter-spacing: -.025em; text-transform: uppercase; color: #cdc9c0; text-shadow: 0 0 60px rgba(0,0,0,.8); }
     .titre-grand span { display: block; margin-top: 14px; font: 500 clamp(.8rem, 2vw, 1.05rem)/1 "IBM Plex Mono", monospace; letter-spacing: .4em; text-transform: uppercase; color: var(--cendre); padding-left: .4em; }
     .titre-grand h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -95,7 +95,7 @@
       .marque b { font-size: 14px; } .marque span { display: none; }                          /* en haut à gauche, en petit : il ne touche plus « Son » */
       .fleches { left: 16px; right: 16px; justify-content: space-between; }
       .fleches .outil { width: 54px; height: 50px; }
-      .titre-grand { top: 14vh; }
+      .titre-grand { top: max(76px, 11vh); }
     }
 
     /* ─────────── la liste (le manuel) ─────────── */
@@ -395,8 +395,10 @@
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js?v=20261109d');   // ?v= : force le téléphone à reprendre la dernière version
+        const { demarrer } = await import('./scene.js?v=20261114f');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
+          // la bande libre de l'écran, entre le titre et le bouton du bas : la pièce s'y pose en entier
+          bande: () => { const h = innerHeight, t = document.querySelector('.titre-grand'), d = document.body.classList.contains('avant-debut') ? $('#depart') : $('#avancer'); return { haut: (t.offsetTop + t.offsetHeight + 22) / h, bas: (d.offsetTop - 22) / h }; },
           depart: retourDe > 0 ? retourDe : 0, bloque: () => avantDebut, surBloque: appeler,
           surPret: () => { document.body.classList.add('piece-prete'); if (allerDesQuePret) { allerDesQuePret = false; parcours.aller(1); } },
           // l'ordi (onsenbranle.fr) n'est pas une étape, mais un clic dessus l'ouvre, comme les autres
