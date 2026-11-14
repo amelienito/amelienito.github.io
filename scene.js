@@ -16,9 +16,8 @@ const PLACES = {
   globe:      { pos: [-4.1, 0, -.7],   face: Math.PI / 2,  vue: [2.75, 1.64, 1.34] },
   talya:      { pos: [3.1, 0, 1.1],    face: -2.4,         vue: [2.4, 1.35, .35] },
   quiz:       { pos: [4.5, 0, -1.6],   face: -Math.PI / 2, vue: [3.0, 1.6, 1.24] },
-  flechettes: { pos: [-4.92, 0, 1.9],  face: Math.PI / 2,  vue: [2.6, 1.6, 1.55] },
   carton:     { pos: [-1.6, 0, 2.3],   face: .5,           vue: [2.2, 1.45, .35] },
-  porte:      { pos: [4.98, 0, .25],   face: -Math.PI / 2, vue: [3.25, 1.4, 1.16] },
+  porte:      { pos: [-4.92, 0, 1.9],  face: Math.PI / 2,  vue: [2.6, 1.5, 1.55] },
 };
 
 // la pièce était un hangar (10 m sur 8,4) : on la resserre, les meubles gardent leur taille, tout se rapproche
