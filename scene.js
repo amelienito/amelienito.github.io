@@ -22,6 +22,8 @@ const PLACES = {
 
 // la pièce était un hangar (10 m sur 8,4) : on la resserre un peu, les meubles gardent leur taille ; assez pour que rien ne se touche
 const SX = .9, SZ = .95, HAUT = 2.85;
+// chaque lampe se paie sur chaque pixel de la pièce : sur téléphone et tablette, on garde les lampes qui se voient, pas les petits reflets
+let LEGER = false;
 Object.values(PLACES).forEach(p => { p.pos[0] *= SX; p.pos[2] *= SZ; });
 
 export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDecor = () => {}, surApproche = () => {}, depart = 0, bloque = () => false, surBloque = () => {}, surPret = () => {}, bande = () => null }) {
@@ -30,6 +32,7 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
 
   /* ─────────── moteur ─────────── */
   const tactile = matchMedia('(pointer: coarse)').matches;
+  LEGER = tactile;
   // sur un téléphone à écran très fin, l'anticrénelage coûte cher pour rien : les pixels sont déjà minuscules
   const rendu = new THREE.WebGLRenderer({ canvas: toile, antialias: !(tactile && (devicePixelRatio || 1) >= 2), preserveDrawingBuffer: !!cliche, powerPreference: tactile ? 'low-power' : 'default' });
   let qualite = 1;   // baisse toute seule si les images arrivent trop espacées (voir la boucle)
@@ -66,14 +69,14 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   taille();
 
   /* ─────────── la lumière : un plafonnier chaud, la nuit par la fenêtre ─────────── */
-  scene.add(new THREE.HemisphereLight('#ffe4c4', '#6b4a2e', 1.0));
+  scene.add(new THREE.HemisphereLight('#ffe4c4', '#6b4a2e', tactile ? 1.14 : 1.0));
   const plafonnier = new THREE.SpotLight('#ffcf96', 68, 14, 1.15, .6, 1.4);
   plafonnier.position.set(0, 3.6, -.3); plafonnier.target.position.set(0, 0, -.5);
   plafonnier.castShadow = true; plafonnier.shadow.mapSize.set(tactile ? 512 : 1024, tactile ? 512 : 1024); plafonnier.shadow.bias = -.0008;
   scene.add(plafonnier, plafonnier.target);
   const nuit = new THREE.DirectionalLight('#9aa8d0', .22); nuit.position.set(-1, 3, -8); scene.add(nuit);
   // une lumière d'appoint venue de devant, sans ombre : ce qui nous fait face (le carton, le dos du canapé) n'est plus un aplat sombre
-  const appoint = new THREE.DirectionalLight('#ffd2a6', .38); appoint.position.set(1.5, 2.2, 9); scene.add(appoint);
+  if (!tactile) { const appoint = new THREE.DirectionalLight('#ffd2a6', .38); appoint.position.set(1.5, 2.2, 9); scene.add(appoint); }
   if (!tactile) { const braise = new THREE.PointLight('#ff9a52', 7, 9, 1.6); braise.position.set(2.2, 1.6, .6); scene.add(braise); }   // une lueur chaude côté canapé (pas sur téléphone : une lampe de plus coûte)
 
   /* ─────────── la pièce ─────────── */
@@ -134,9 +137,10 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   // le mur de face et le plafond n'ont qu'une face, tournée vers l'intérieur. De dehors on voit à travers, de dedans ils ferment la pièce.
   {
     const LX = 5 * SX + .06, ZF = 4.2 * SZ, ZB = -4.19 * SZ;
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, HAUT), peinture); face.position.set(0, HAUT / 2, ZF); face.rotation.y = Math.PI; face.receiveShadow = true; scene.add(face);
-    const pl = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, .12), plinthe); pl.position.set(0, .06, ZF - .012); pl.rotation.y = Math.PI; scene.add(pl);
-    const plafond = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, ZF - ZB + .12), new THREE.MeshStandardMaterial({ color: '#f0e2c6', roughness: .95, emissive: '#8a643c', emissiveIntensity: .62 }));
+    // (en couleur plate : aucune lampe à calculer sur ces grandes surfaces, qui remplissent le haut de l'écran)
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, HAUT), new THREE.MeshBasicMaterial({ color: '#8f6c4a' })); face.position.set(0, HAUT / 2, ZF); face.rotation.y = Math.PI; scene.add(face);
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, .12), new THREE.MeshBasicMaterial({ color: '#a8977c' })); pl.position.set(0, .06, ZF - .012); pl.rotation.y = Math.PI; scene.add(pl);
+    const plafond = new THREE.Mesh(new THREE.PlaneGeometry(LX * 2, ZF - ZB + .12), new THREE.MeshBasicMaterial({ color: '#7a5a3c' }));
     plafond.position.set(0, HAUT, (ZF + ZB) / 2 - .06); plafond.rotation.x = Math.PI / 2; scene.add(plafond);
   }
 
@@ -541,7 +545,7 @@ function coinTele(g, { M, boite }) {
   const bleu = new THREE.MeshBasicMaterial({ color: '#58a6ff' });
   [-1, 1].forEach(c => boite(.004, .34, .004, bleu, c * .036, .22, .1, ps));
   // le reflet de l'écran sur le sol et le canapé
-  const lueur = new THREE.PointLight('#8a8cff', 1.1, 3.6, 1.6); lueur.position.set(0, 1.05, .7); g.add(lueur);
+  if (!LEGER) { const lueur = new THREE.PointLight('#8a8cff', 1.1, 3.6, 1.6); lueur.position.set(0, 1.05, .7); g.add(lueur); }
 }
 
 // une manette DualSense : le corps blanc et ses deux poignées, le cœur noir, le grand pavé tactile, la barre lumineuse
@@ -849,7 +853,7 @@ const FORMES = {
     const pied = new THREE.Mesh(new THREE.CylinderGeometry(.08, .09, .03, 10), metal); lampe.add(pied);
     const bras = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .45, 5), metal); bras.position.set(.06, .22, 0); bras.rotation.z = -.3; lampe.add(bras);
     const abat = new THREE.Mesh(new THREE.ConeGeometry(.1, .14, 10, 1, true), M('#d9a23a', { side: THREE.DoubleSide })); abat.position.set(.15, .44, 0); abat.rotation.z = 2.3; lampe.add(abat);
-    const ampoule = new THREE.PointLight('#ffcf8a', 1.6, 2, 1.5); ampoule.position.set(.2, .38, 0); lampe.add(ampoule);
+    if (!LEGER) { const ampoule = new THREE.PointLight('#ffcf8a', 1.6, 2, 1.5); ampoule.position.set(.2, .38, 0); lampe.add(ampoule); }
     // la chaise
     // un fauteuil de bureau rembourré, orange brûlé, sur cinq roulettes : on s'y enfonce pour créer
     const chaise = new THREE.Group(); chaise.position.set(.62, 0, .98); chaise.rotation.y = .95; g.add(chaise);   // repoussé de côté, comme si on venait de se lever
@@ -996,6 +1000,8 @@ const FORMES = {
       for (let i = 0; i < 9; i++) boite(.15, .006, .15, noyerF, 0, .02 + i * .155, .095, face);
       for (let i = 0; i < 8; i++) for (let j = 0; j < 11; j++) { if ((i * 11 + j + f) % 13 === 5) continue; boite(.0105, .124, .14, M(tranches[(i * 3 + j * 5 + f * 7) % tranches.length], { roughness: .35 }), -.063 + j * .0125, .087 + i * .155, .095, face); }
     }
+
+    fusionnerDecor(tourne);   // ses ~350 CD et planches tournent ensemble : un seul bloc par couleur au lieu de 350 objets à dessiner (deux fois, avec l'ombre)
 
     // un halo bleu sur le mur, quand l'ampli s'allume
     const halo = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.0), new THREE.MeshBasicMaterial({ map: texteHalo(), color: '#3aa6ff', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
@@ -1293,7 +1299,7 @@ const FORMES = {
     // un second carton derrière, et un petit dessus
     const c2 = boite(.5, .4, .45, kraft2, -.55, .2, -.45, g); c2.rotation.y = .4;
     const c3 = boite(.36, .26, .32, kraft, -.5, .53, -.43, g); c3.rotation.y = .2;
-    const lueur = new THREE.PointLight('#ffd9a0', 0, 1.2, 1.6); lueur.position.set(0, .52, 0); c.add(lueur);
+    const lueur = LEGER ? { intensity: 0 } : new THREE.PointLight('#ffd9a0', 0, 1.2, 1.6); if (!LEGER) { lueur.position.set(0, .52, 0); c.add(lueur); }
     return {
       anime(temps, eveil, secousse) {
         const o = Math.min(1, eveil * 1.2);

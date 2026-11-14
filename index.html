@@ -395,7 +395,7 @@
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js?v=20261114f');   // ?v= : force le téléphone à reprendre la dernière version
+        const { demarrer } = await import('./scene.js?v=20261114g');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
           // la bande libre de l'écran, entre le titre et le bouton du bas : la pièce s'y pose en entier
           bande: () => { const h = innerHeight, t = document.querySelector('.titre-grand'), d = document.body.classList.contains('avant-debut') ? $('#depart') : $('#avancer'); return { haut: (t.offsetTop + t.offsetHeight + 22) / h, bas: (d.offsetTop - 22) / h }; },
