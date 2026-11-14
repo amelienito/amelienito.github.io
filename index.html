@@ -50,7 +50,8 @@
     body.en-route .marque { opacity: 1; }
 
     .outils { position: fixed; right: clamp(16px, 3vw, 34px); top: max(16px, env(safe-area-inset-top)); display: flex; gap: 8px; }
-    .outil { padding: 9px 12px; border: 1px solid var(--trait); background: rgba(13,12,10,.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: var(--os); transition: border-color .2s, background .2s, color .2s; }
+    /* (pas de flou d'arrière-plan sur les boutons : au-dessus de la pièce en 3D, il divisait la fluidité par deux — mesuré : 25-30 ms par image avec, 16,6 sans) */
+    .outil { padding: 9px 12px; border: 1px solid var(--trait); background: rgba(13,12,10,.72); color: var(--os); transition: border-color .2s, background .2s, color .2s; }
     .outil:hover { border-color: rgba(230,220,194,.6); }
     .outil[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
@@ -147,7 +148,7 @@
     .depart { position: fixed; left: 50%; bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px)); transform: translateX(-50%); display: none; justify-items: center; gap: 12px; }
     body.avant-debut .depart { display: grid; }
     body.avant-debut .avancer, body.avant-debut .fleches { display: none; }   /* avant « Commencer », pas de flèches : un seul bouton */
-    .commencer { position: relative; display: grid; justify-items: center; gap: 6px; padding: 17px 34px 15px; border: 1px solid var(--os); background: rgba(13,12,10,.62); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: var(--os);
+    .commencer { position: relative; display: grid; justify-items: center; gap: 6px; padding: 17px 34px 15px; border: 1px solid var(--os); background: rgba(13,12,10,.78); color: var(--os);
       font: 500 15px/1 "IBM Plex Mono", monospace; letter-spacing: .32em; text-transform: uppercase; padding-left: calc(34px + .32em); transition: background .25s, color .25s, transform .2s; animation: depart-arrive .9s .4s cubic-bezier(.2,.8,.2,1) both; }
     .commencer small { font-size: 10px; letter-spacing: .2em; color: var(--cendre); transition: color .25s; }
     .commencer::before { content: ""; position: absolute; inset: -1px; border: 1px solid var(--os); opacity: 0; animation: depart-onde 2.6s 1.4s ease-out infinite; pointer-events: none; }
