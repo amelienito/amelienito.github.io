@@ -2,7 +2,7 @@
    OSB CORPORATION — la pièce
    Une chambre-bureau vue comme une maison de poupée : chaque création
    est un objet de la pièce (l'ordi, la chaîne CD, le globe, le panier de
-   Talya, le pupitre de quiz, la cible, le carton). On passe de l'un à l'autre
+   Talya, le pupitre de quiz, la porte chromée, la cible, le carton). On passe de l'un à l'autre
    à la molette, au doigt ou aux flèches ; un clic sur l'objet l'ouvre.
    ════════════════════════════════════════════════════════════════════ */
 import * as THREE from './vendor/three.min.js';   // three.js compacté (vendor/three.min.js, refait avec esbuild depuis three.module.js)
@@ -18,6 +18,7 @@ const PLACES = {
   quiz:       { pos: [4.5, 0, -1.6],   face: -Math.PI / 2, vue: [3.0, 1.6, 1.24] },
   flechettes: { pos: [-4.92, 0, 1.9],  face: Math.PI / 2,  vue: [2.6, 1.6, 1.55] },
   carton:     { pos: [-1.6, 0, 2.3],   face: .5,           vue: [2.2, 1.45, .35] },
+  porte:      { pos: [4.98, 0, .25],   face: -Math.PI / 2, vue: [3.25, 1.4, 1.16] },
 };
 
 // la pièce était un hangar (10 m sur 8,4) : on la resserre, les meubles gardent leur taille, tout se rapproche
@@ -1075,6 +1076,76 @@ const FORMES = {
       anime(temps, eveil, secousse) {
         fleche.rotation.y = .25 + Math.sin(temps * 30) * .08 * secousse;
         cible.rotation.z = Math.sin(temps * 22) * .02 * secousse;
+      },
+    };
+  },
+
+  // Osmose : une porte chromée dans le mur de droite, entrouverte sur une nuit lilas ; des lucioles s'en échappent
+  porte(g, { M, boite }) {
+    // le chrome reflète un ciel pervenche, comme le logo
+    const ciel = toileTexte(512, 256, (x, w, h) => {
+      const d = x.createLinearGradient(0, 0, 0, h);
+      [[0, '#ffffff'], [.18, '#c9cdff'], [.42, '#6f6fd0'], [.5, '#1b1840'], [.58, '#8a86e8'], [.78, '#e6e3ff'], [1, '#4a4596']].forEach(([o, c]) => d.addColorStop(o, c));
+      x.fillStyle = d; x.fillRect(0, 0, w, h);
+      x.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 9; i++) { x.fillStyle = `rgba(255,${200 + i * 5},255,.18)`; x.fillRect(i * 61 % w, 0, 14 + i * 3, h); }
+    });
+    ciel.mapping = THREE.EquirectangularReflectionMapping; ciel.colorSpace = THREE.SRGBColorSpace;
+    const chrome = new THREE.MeshStandardMaterial({ color: '#e4e6ff', metalness: 1, roughness: .14, envMap: ciel, envMapIntensity: 1.35 });
+    const chromeDoux = new THREE.MeshStandardMaterial({ color: '#c9ccf6', metalness: 1, roughness: .32, envMap: ciel, envMapIntensity: 1.1 });
+    const L = .86, H = 2.02, e = .085;
+    // le chambranle
+    boite(e, H + e, .14, chrome, -(L + e) / 2, (H + e) / 2, .05, g); boite(e, H + e, .14, chrome, (L + e) / 2, (H + e) / 2, .05, g);
+    boite(L + 2 * e, e, .14, chrome, 0, H + e / 2, .05, g);
+    boite(L + 2 * e + .08, .03, .2, chrome, 0, H + e + .015, .06, g);
+    // derrière : la nuit d'Osmose, qui dérive doucement
+    const nuitTex = toileTexte(256, 512, (x, w, h) => {
+      const d = x.createLinearGradient(0, 0, 0, h); d.addColorStop(0, '#0b0926'); d.addColorStop(.55, '#231f6e'); d.addColorStop(1, '#0d0b2c'); x.fillStyle = d; x.fillRect(0, 0, w, h);
+      for (let i = 0; i < 7; i++) { const r = x.createRadialGradient((i * 97) % w, (i * 173) % h, 0, (i * 97) % w, (i * 173) % h, 90 + i * 12); r.addColorStop(0, i % 2 ? 'rgba(198,182,255,.42)' : 'rgba(142,155,255,.38)'); r.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = r; x.fillRect(0, 0, w, h); }
+      for (let i = 0; i < 70; i++) { x.fillStyle = `rgba(235,236,255,${.35 + (i % 5) * .13})`; x.beginPath(); x.arc((i * 53.7) % w, (i * 97.3) % h, (i % 4) * .5 + .6, 0, 7); x.fill(); }
+    });
+    nuitTex.wrapS = nuitTex.wrapT = THREE.RepeatWrapping;
+    const portail = new THREE.Mesh(new THREE.PlaneGeometry(L, H), new THREE.MeshBasicMaterial({ map: nuitTex, toneMapped: false }));
+    portail.position.set(0, H / 2, -.005); g.add(portail);
+    // le battant, sur ses gonds à gauche : il s'ouvre vers nous
+    const gond = new THREE.Group(); gond.position.set(-L / 2, 0, .02); g.add(gond);
+    boite(L - .01, H - .01, .045, chrome, L / 2, H / 2, 0, gond);
+    [[.62, 1.42], [.62, .55]].forEach(([h, y]) => boite(L - .2, h, .02, chromeDoux, L / 2, y, .03, gond));
+    const poignee = new THREE.Mesh(new THREE.SphereGeometry(.035, 20, 14), chrome); poignee.position.set(L - .09, 1.0, .07); gond.add(poignee);
+    boite(.05, .12, .02, chrome, L - .09, 1.0, .035, gond);
+    // au-dessus, le logo, qui luit comme un néon
+    const logo = new THREE.Mesh(new THREE.PlaneGeometry(.96, .242), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false, color: '#ffffff' }));
+    new THREE.TextureLoader().load('img/osmose-logo.webp', (t) => { t.colorSpace = THREE.SRGBColorSpace; logo.material.map = t; logo.material.needsUpdate = true; });
+    logo.position.set(0, H + .3, .03); logo.userData.garder = true; g.add(logo);
+    // la lumière qui passe par l'entrebâillement, et sa flaque au sol
+    const lueur = new THREE.PointLight('#a99bff', 1, 3.2, 1.6); lueur.position.set(.2, 1.15, .35); g.add(lueur);
+    const flaqueTex = toileTexte(256, 256, (x, w, h) => { const r = x.createRadialGradient(w / 2, 0, 0, w / 2, 0, h); r.addColorStop(0, 'rgba(190,175,255,.85)'); r.addColorStop(.45, 'rgba(140,150,255,.28)'); r.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = r; x.fillRect(0, 0, w, h); });
+    const flaque = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.4), new THREE.MeshBasicMaterial({ map: flaqueTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+    flaque.rotation.x = -Math.PI / 2; flaque.position.set(.15, .012, .72); g.add(flaque);
+    // des lucioles qui s'échappent de la porte
+    const N = 46, pos = new Float32Array(N * 3), vit = [];
+    const naitre = (i, loin) => { pos[i * 3] = (Math.random() - .5) * L * .8; pos[i * 3 + 1] = .2 + Math.random() * (H - .3); pos[i * 3 + 2] = loin ? Math.random() * 1.4 : .02; vit[i] = [(Math.random() - .5) * .05, .02 + Math.random() * .05, .1 + Math.random() * .16]; };
+    for (let i = 0; i < N; i++) naitre(i, true);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const tache = toileTexte(64, 64, (x, w) => { const r = x.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.25, 'rgba(205,195,255,.8)'); r.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = r; x.fillRect(0, 0, w, w); });
+    const lucioles = new THREE.Points(geo, new THREE.PointsMaterial({ size: .07, map: tache, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: '#d9d2ff', toneMapped: false }));
+    lucioles.userData.garder = true; g.add(lucioles);
+    let pret = false;
+    return {
+      anime(temps, eveil, secousse, dt) {
+        if (!pret) { pret = true; [portail, flaque, logo].forEach((m) => { m.castShadow = false; m.receiveShadow = false; }); }
+        gond.rotation.y = -(.32 + eveil * .95) + Math.sin(temps * 30) * .03 * secousse;   // entrouverte, elle s'ouvre quand on approche
+        nuitTex.offset.y = (temps * .015) % 1; nuitTex.offset.x = Math.sin(temps * .1) * .05;
+        lueur.intensity = .9 + eveil * 2.4 + Math.sin(temps * 2.1) * .15;
+        flaque.material.opacity = .35 + eveil * .65;
+        logo.material.opacity = .82 + .18 * Math.sin(temps * 1.7) * (1 - eveil * .5);
+        const v = .4 + eveil * 1.4;
+        for (let i = 0; i < N; i++) {
+          pos[i * 3] += (vit[i][0] + Math.sin(temps + i) * .02) * dt * v; pos[i * 3 + 1] += vit[i][1] * dt * v; pos[i * 3 + 2] += vit[i][2] * dt * v;
+          if (pos[i * 3 + 2] > 1.6 || pos[i * 3 + 1] > H + .4) naitre(i, false);
+        }
+        geo.attributes.position.needsUpdate = true;
+        lucioles.material.size = .055 + eveil * .03;
       },
     };
   },
