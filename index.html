@@ -8,7 +8,12 @@
   <meta name="theme-color" content="#0d0c0a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@500&family=Inter+Tight:wght@700&display=swap" rel="stylesheet">
+  <!-- la pièce se télécharge tout de suite, en même temps que la page (sinon : la page, puis scene.js, puis three.js, l'un après l'autre) -->
+  <link rel="modulepreload" href="./scene.js?v=20261115a">
+  <link rel="modulepreload" href="./vendor/three.min.js">
+  <!-- les polices ne retiennent plus le démarrage : elles arrivent à côté -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@500&family=Inter+Tight:wght@700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@500&family=Inter+Tight:wght@700&display=swap" rel="stylesheet"></noscript>
   <style>
     /* ════════════════════════════════════════════════════════════════
        LES CRÉATIONS D'AMÉLIEN
@@ -30,7 +35,7 @@
     body.parcours { overflow: hidden; height: 100svh; position: fixed; inset: 0; overscroll-behavior: none; touch-action: none; }   /* la page ne glisse pas sous la pièce */
     html:has(body.parcours) { overflow: hidden; overscroll-behavior: none; }
     button, a { touch-action: manipulation; }   /* pas de zoom au double appui sur un bouton */
-    #toile { opacity: 0; transition: opacity .8s ease; } body.piece-prete #toile { opacity: 1; }
+    #toile { opacity: 0; transition: opacity .45s ease; } body.piece-prete #toile { opacity: 1; }
     #toile { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
     .hud::before { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 46vh; pointer-events: none; background: linear-gradient(transparent, rgba(13,10,7,.78)); opacity: 0; transition: opacity .6s; }
     .hud::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 34vh; pointer-events: none; background: linear-gradient(rgba(13,10,7,.7), transparent); }
@@ -395,7 +400,7 @@
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js?v=20261114g');   // ?v= : force le téléphone à reprendre la dernière version
+        const { demarrer } = await import('./scene.js?v=20261115a');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
           // la bande libre de l'écran, entre le titre et le bouton du bas : la pièce s'y pose en entier
           bande: () => { const h = innerHeight, t = document.querySelector('.titre-grand'), d = document.body.classList.contains('avant-debut') ? $('#depart') : $('#avancer'); return { haut: (t.offsetTop + t.offsetHeight + 22) / h, bas: (d.offsetTop - 22) / h }; },
