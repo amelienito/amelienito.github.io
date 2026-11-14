@@ -1115,7 +1115,8 @@ const FORMES = {
     boite(.05, .12, .02, chrome, L - .09, 1.0, .035, gond);
     // au-dessus, le logo, qui luit comme un néon
     const logo = new THREE.Mesh(new THREE.PlaneGeometry(.96, .242), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false, color: '#ffffff' }));
-    new THREE.TextureLoader().load('img/osmose-logo.webp', (t) => { t.colorSpace = THREE.SRGBColorSpace; logo.material.map = t; logo.material.needsUpdate = true; });
+    logo.visible = false;   // (pas de rectangle blanc le temps que l'image arrive)
+    new THREE.TextureLoader().load('img/osmose-logo.webp', (t) => { t.colorSpace = THREE.SRGBColorSpace; logo.material.map = t; logo.material.needsUpdate = true; logo.visible = true; });
     logo.position.set(0, H + .3, .03); logo.userData.garder = true; g.add(logo);
     // la lumière qui passe par l'entrebâillement, et sa flaque au sol
     const lueur = new THREE.PointLight('#a99bff', 1, 3.2, 1.6); lueur.position.set(.2, 1.15, .35); g.add(lueur);
