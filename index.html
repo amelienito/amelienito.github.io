@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Les créations d'Amélien</title>
-  <meta name="description" content="OSB Corporation présente : les créations d'Amélien. Fun facts, Osmose, Cite 3 Chinois, RP Talya, Music Discovery.">
+  <title>OSB Corporation</title>
+  <meta name="description" content="OSB Corporation présente : Fun facts, Osmose, Cite 3 Chinois, RP Talya, Music Discovery. Une pièce, et dans chaque objet un jeu.">
   <meta name="theme-color" content="#0d0c0a">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="OSB Corporation présente : les créations d'Amélien">
+  <meta property="og:title" content="OSB Corporation">
   <meta property="og:description" content="Une pièce, et dans chaque objet un jeu : Fun facts, Osmose, Cite 3 Chinois, RP Talya, Music Discovery.">
   <meta property="og:url" content="https://amelienito.github.io/">
   <meta property="og:image" content="https://amelienito.github.io/img/apercu-lien.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
+  <script src="./osb.js" defer></script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d0c0a'/%3E%3Cpath d='M15 17h34v21H15z' fill='%23dcc19a'/%3E%3Cpath d='M15 38h34l8 13H7z' fill='%23c8683a'/%3E%3Cpath d='M28 22h8v8h-8z' fill='%231b2350'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- la pièce se télécharge tout de suite, en même temps que la page (sinon : la page, puis scene.js, puis three.js, l'un après l'autre) -->
-  <link rel="modulepreload" href="./scene.js?v=20261115a">
+  <link rel="modulepreload" href="./scene.js?v=20261116a">
   <link rel="modulepreload" href="./vendor/three.min.js">
   <!-- les polices ne retiennent plus le démarrage : elles arrivent à côté -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@500&family=Inter+Tight:wght@700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -151,7 +152,11 @@
 
     /* les textes posés sur la pièce laissent passer le doigt (sinon on ne peut pas glisser en commençant dessus) et ne se sélectionnent pas */
     .titre-grand, .fiche, .fiche.visible, .aide { pointer-events: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-    .fiche.visible .entrer { pointer-events: auto; }
+    .fiche.visible .entrer, .fiche.visible .fiche-retour { pointer-events: auto; }
+    /* « Un retour ? » : au dernier arrêt de la visite, et en bas de la liste */
+    .fiche-retour, .pied-retour { justify-self: start; margin-top: 14px; padding: 6px 0; background: none; border: 0; color: var(--os); font: 500 12px/1.5 "IBM Plex Mono", monospace; letter-spacing: .08em; text-transform: uppercase; text-align: left; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 5px; cursor: pointer; opacity: .85; transition: opacity .2s; }
+    .fiche-retour:hover, .pied-retour:hover { opacity: 1; }
+    .pied-retour { margin: 0; color: inherit; }
 
     /* le départ : « Commencer » lance le son et emmène à la première création ; avant, la molette et le doigt attendent */
     .depart { position: fixed; left: 50%; bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px)); transform: translateX(-50%); display: none; justify-items: center; gap: 12px; }
@@ -181,7 +186,7 @@
       <button class="outil mono" id="son" aria-pressed="false">Son</button>
       <button class="outil mono" id="vers-liste">Liste</button>
     </div>
-    <div class="titre-grand"><h1>Les créations d'Amélien</h1><b aria-hidden="true">OSB Corporation</b><span aria-hidden="true">présente :</span></div>
+    <div class="titre-grand"><h1>OSB Corporation</h1><b aria-hidden="true">OSB Corporation</b><span aria-hidden="true">présente :</span></div>
     <button class="avancer mono" id="avancer"><span>Avancer</span><i aria-hidden="true"></i></button>
     <div class="depart" id="depart">
       <button class="commencer" id="commencer"><span>Commencer</span><small>avec le son</small></button>
@@ -193,6 +198,7 @@
       <p id="fiche-legende"></p>
       <p class="fiche-astuce mono" id="fiche-astuce" hidden></p>
       <a class="entrer mono" id="fiche-lien" href="#">Entrer</a>
+      <button class="fiche-retour" id="fiche-retour" type="button" hidden>Un retour ? Un commentaire ? Un bug à partager ?</button>
     </section>
     <ol class="sommaire" id="sommaire" aria-label="Les créations"></ol>
     <p class="aide mono" id="aide"><span class="aide-ordi">Molette ou flèches pour avancer · clique sur l'objet pour entrer</span><span class="aide-tel">Glisse pour avancer · touche l'objet pour entrer</span></p>
@@ -210,7 +216,7 @@
         <button class="vers-parcours mono" id="vers-parcours">Reprendre le chemin</button>
       </header>
       <ul class="pages" id="pages"></ul>
-      <footer><span>Amélien, 2026</span><a href="https://www.onsenbranle.fr">onsenbranle.fr</a></footer>
+      <footer><span>Amélien, 2026</span><button class="pied-retour" id="pied-retour" type="button">Un retour ? Un commentaire ? Un bug à partager ?</button><a href="https://www.onsenbranle.fr">onsenbranle.fr</a></footer>
     </main>
   </div>
 
@@ -227,7 +233,7 @@
       { id: 'cite-3-chinois', titre: 'Cite 3 Chinois', legende: 'Voyons voir si t’es raciste', lien: 'https://amelienito.github.io/cite-trois-chinois/', forme: 'globe', couleur: '#ffc96b', image: 'img/cite-3-chinois.png' },
       { id: 'hb', titre: 'RP Talya', legende: 'Joyeux anniversaire Flo', lien: 'https://amelienito.github.io/Hb/', forme: 'talya', couleur: '#cfe8dc', image: 'img/rp-talya.png' },
       { id: 'music-discovery', titre: 'Music Discovery', legende: 'Découvrir de la musique sainement', lien: 'https://amelienito.github.io/music-discovery/', forme: 'platine', couleur: '#9fd8ff', halo: '#ffd39a', image: 'img/music-discovery.png' },
-      { id: 'osmose', titre: 'Osmose', legende: 'Le quiz rap du soir', lien: 'https://amelienito.github.io/osmose/', forme: 'porte', couleur: '#c6b6ff', image: 'img/osmose.png' },
+      { id: 'osmose', titre: 'Osmose', legende: 'Le quizz rap du soir', lien: 'https://amelienito.github.io/osmose/', forme: 'porte', couleur: '#c6b6ff', image: 'img/osmose.png' },
       { id: 'a-venir', titre: 'D\'autres créations arrivent', legende: '…', forme: 'carton', couleur: '#ffd9a0', image: 'img/a-venir.png' },
     ];
 
@@ -237,6 +243,10 @@
     const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const cliche = new URLSearchParams(location.search).get('cliche');
     if (cliche) document.body.classList.add('cliche');
+
+    /* les retours des visiteurs (osb.js, le fichier commun à tous les jeux) */
+    const retour = () => { if (window.OSB) OSB.retour({ ici: 'le hub' }); };
+    $('#fiche-retour').addEventListener('click', retour); $('#pied-retour').addEventListener('click', retour);
 
     /* la liste */
     $('#pages').innerHTML = ETAPES.slice(1).map(e => {
@@ -347,6 +357,7 @@
         const l = $('#fiche-lien');
         if (e.lien) { l.href = e.lien; l.textContent = 'Entrer'; l.classList.remove('ferme'); l.removeAttribute('aria-disabled'); }
         else { l.removeAttribute('href'); l.textContent = k === ETAPES.length - 1 ? 'Bientôt' : 'Pas encore ouvert'; l.classList.add('ferme'); l.setAttribute('aria-disabled', 'true'); }
+        $('#fiche-retour').hidden = k !== ETAPES.length - 1;   // la fin de la visite : le moment de demander un avis
         fiche.classList.add('visible');
       }, 220);
     }
@@ -410,7 +421,7 @@
       try {
         const essai = document.createElement('canvas');
         if (!(essai.getContext('webgl2') || essai.getContext('webgl'))) throw new Error('pas de webgl');
-        const { demarrer } = await import('./scene.js?v=20261115a');   // ?v= : force le téléphone à reprendre la dernière version
+        const { demarrer } = await import('./scene.js?v=20261116a');   // ?v= : force le téléphone à reprendre la dernière version
         parcours = demarrer({ toile: $('#toile'), etapes: ETAPES, surEtape: afficher, reduit,
           // la bande libre de l'écran, entre le titre et le bouton du bas : la pièce s'y pose en entier
           bande: () => { const h = innerHeight, t = document.querySelector('.titre-grand'), d = document.body.classList.contains('avant-debut') ? $('#depart') : $('#avancer'); return { haut: (t.offsetTop + t.offsetHeight + 22) / h, bas: (d.offsetTop - 22) / h }; },

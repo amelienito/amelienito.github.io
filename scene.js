@@ -126,7 +126,19 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   }
   tableau('img/murs/chief-keef.jpg', 1.0, .749, 2.3, 1.72, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .06, dore: true, marge: .06 });   // Chief Keef au jardin d'Éden, au-dessus de la chaîne CD
   tableau('img/murs/koi.jpg', .72, .72, -2.6, 1.78, -4.18, 0, { cadre: '#5a3820', bord: .05 });                                     // la carpe géante, au-dessus du bureau
-  tableau('img/murs/i-love-ugly.jpg', .9, .602, -4.99, 2.1, -1.0, Math.PI / 2, { cadre: '#161514', bord: .045, lum: .55 });   // I Love Ugly (Chester Watson), au-dessus du globe
+  // au-dessus du globe : un rouleau suspendu, le chiffre trois (三) tracé au pinceau — le « 3 » de Cite 3 Chinois
+  {
+    const L = .5, Ht = .98, g = new THREE.Group(); g.position.set(-4.99, 2.07, -1.0); g.rotation.y = Math.PI / 2; scene.add(g);
+    const tex = toileTexte(400, 784, dessinerRouleau);
+    const papier = new THREE.Mesh(new THREE.PlaneGeometry(L, Ht), Mat({ color: '#ffffff', map: tex, emissiveMap: tex, emissive: '#ffffff', emissiveIntensity: .4 }));
+    papier.position.z = .014; papier.receiveShadow = true; papier.userData.garder = true; g.add(papier);
+    const bois = M('#2a1a12', { flatShading: false }), fil = M('#8a2a22', { flatShading: false });
+    const baguette = (r, long, y, z) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(r, r, long, 12), bois); b.rotation.z = Math.PI / 2; b.position.set(0, y, z); b.castShadow = true; g.add(b); };
+    baguette(.011, L + .016, Ht / 2, .016); baguette(.021, L + .075, -Ht / 2, .024);
+    // le cordon rouge, en triangle jusqu'au clou
+    [-1, 1].forEach(c => { const d = new THREE.Mesh(new THREE.BoxGeometry(.006, .2, .004), fil); d.position.set(c * L * .21, Ht / 2 + .085, .012); d.rotation.z = c * 1.0; g.add(d); });
+    boite(.016, .016, .02, bois, 0, Ht / 2 + .14, .01, g);
+  }
   tableau('img/murs/evil-dead-2.jpg', .58, .899, 4.99, 1.86, -1.2, -Math.PI / 2, { cadre: '#b8282e', bord: .035, marge: .045, lum: .75 });   // Evil Dead 2, au-dessus du pupitre de quiz
 
   meubler(scene, { M, boite });
@@ -835,6 +847,42 @@ function toileTexte(w, h, dessin) {
   // une fois les polices chargées, on redessine proprement
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { x.clearRect(0, 0, w, h); dessin(x, w, h); tex.needsUpdate = true; });
   return tex;
+}
+/* Le rouleau au-dessus du globe : 三, « trois », en trois traits de pinceau sur papier, monté sur soie bleu nuit,
+   avec un sceau rouge. Tout est dessiné ici : pas d'image à télécharger. */
+function dessinerRouleau(x, W, H) {
+  let graine = 7; const alea = () => { graine = (graine * 16807) % 2147483647; return graine / 2147483647; };
+  // la soie de montage, puis le papier
+  x.fillStyle = '#26314a'; x.fillRect(0, 0, W, H);
+  for (let i = 0; i < 90; i++) { x.fillStyle = 'rgba(255,255,255,' + (.012 + alea() * .02) + ')'; x.fillRect(0, alea() * H, W, 1); }
+  const px = 30, py = 74, pw = W - 60, ph = H - 74 - 96;
+  const fond = x.createLinearGradient(0, py, 0, py + ph); fond.addColorStop(0, '#f1e8d3'); fond.addColorStop(1, '#e7dcc1');
+  x.fillStyle = fond; x.fillRect(px, py, pw, ph);
+  for (let i = 0; i < 520; i++) { x.fillStyle = 'rgba(90,70,40,' + (.02 + alea() * .05) + ')'; x.fillRect(px + alea() * pw, py + alea() * ph, 1 + alea() * 2, 1); }
+  x.strokeStyle = 'rgba(201,168,92,.75)'; x.lineWidth = 2; x.strokeRect(px - 5, py - 5, pw + 10, ph + 10);
+  // un trait de pinceau : on appuie à l'entrée, on allège au milieu, on écrase à la sortie ; il monte un peu vers la droite
+  const trait = (cx, cy, demi, ep) => {
+    const monte = demi * .11, N = 60, haut = [], bas = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N, X = cx - demi + 2 * demi * t, Y = cy + monte - 2 * monte * t - Math.sin(t * Math.PI) * ep * .1;
+      const e = ep / 2 * (.7 + .3 * Math.pow(Math.abs(2 * t - 1), 1.6)) * Math.min(1, Math.sqrt(t / .08)) * Math.min(1, Math.sqrt((1 - t) / .05));
+      const sortie = Math.max(0, (t - .74) / .26), entree = Math.max(0, 1 - t / .16);
+      haut.push([X, Y - e * (1 + entree * .3 - sortie * .1)]); bas.push([X, Y + e * (1 + sortie * .6 + entree * .05)]);
+    }
+    x.save(); x.fillStyle = '#16130f'; x.shadowColor = 'rgba(22,19,15,.55)'; x.shadowBlur = 4;
+    x.beginPath(); x.moveTo(haut[0][0], haut[0][1]); haut.forEach(p => x.lineTo(p[0], p[1])); bas.reverse().forEach(p => x.lineTo(p[0], p[1])); x.closePath(); x.fill();
+    x.restore();
+    // le pinceau qui s'assèche : des filets de papier dans l'encre
+    x.save(); x.strokeStyle = 'rgba(236,226,204,.5)'; x.lineCap = 'round';
+    for (let k = 0; k < 16; k++) { const t0 = .32 + alea() * .4, l = .1 + alea() * .22, dy = (alea() - .5) * ep * .5;
+      x.lineWidth = .6 + alea() * 1.4; x.beginPath(); x.moveTo(cx - demi + 2 * demi * t0, cy + monte - 2 * monte * t0 + dy); x.lineTo(cx - demi + 2 * demi * (t0 + l), cy + monte - 2 * monte * (t0 + l) + dy - 1); x.stroke(); }
+    x.restore();
+  };
+  trait(W / 2 - 4, 248, 86, 46); trait(W / 2 + 2, 392, 62, 40); trait(W / 2, 550, 124, 54);
+  // le sceau
+  x.save(); x.translate(px + 44, py + ph - 58); x.rotate(-.05); x.fillStyle = '#b3261e'; arrondi(x, -22, -22, 44, 44, 5); x.fill();
+  x.strokeStyle = 'rgba(241,232,211,.9)'; x.lineWidth = 1.5; x.strokeRect(-17, -17, 34, 34);
+  x.fillStyle = '#f1e8d3'; x.font = '800 13px "Inter Tight", Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('OSB', 0, 1); x.restore();
 }
 // un rectangle aux coins arrondis
 function arrondi(x, X, Y, W, H, r) {
