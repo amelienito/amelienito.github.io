@@ -4,6 +4,7 @@
    OSB.ici('osmose')                 note la visite (les jeux sont sur le même site : ils partagent cette mémoire)
    OSB.autres('osmose')              les autres jeux, ceux qu'on n'a jamais ouverts d'abord
    OSB.pub({ ici: 'osmose' })        la coupure pub : une réclame pour un autre jeu, qu'on peut passer
+                                     ({ auto: 9 } : elle se referme toute seule au bout de 9 secondes, pour une radio qu'on écoute de loin)
    OSB.retour({ ici: 'osmose' })     « Un retour ? Un commentaire ? Un bug à partager ? » : la fenêtre pour écrire
    OSB.pied(element, { ici })        pose en fin de visite la ligne des retours et les autres jeux
 
@@ -136,7 +137,7 @@ textarea.osb-champ{min-height:120px;resize:vertical}
 
     /* la coupure pub. Jamais deux dans la même visite, jamais deux en moins de dix minutes d'un jeu à l'autre (sauf force). */
     pubPossible() { return !OSB._pubVue && Date.now() - mem.lire('osb-pub-t', 0) > 10 * 60 * 1000; },
-    pub({ ici, force = false, attente = 3 } = {}) {
+    pub({ ici, force = false, attente = 3, auto = 0 } = {}) {
       if (!force && !OSB.pubPossible()) return Promise.resolve(null);
       const choix = OSB.autres(ici); if (!choix.length) return Promise.resolve(null);
       // de préférence un jeu jamais ouvert ; sinon, pas le même que la dernière fois
@@ -154,7 +155,8 @@ textarea.osb-champ{min-height:120px;resize:vertical}
       const b = f.el.querySelector('#osb-passer'), r = f.el.querySelector('#osb-reprise'); let n = attente;
       const tic = setInterval(() => { n--; if (n > 0) { b.textContent = 'Passer (' + n + ')'; r.textContent = 'reprise dans ' + n; } else { clearInterval(tic); b.disabled = false; b.textContent = 'Passer la pub'; r.textContent = 'vous pouvez passer'; f.fermable = true; b.focus({ preventScroll: true }); } }, 1000);
       b.onclick = () => f.fermer('passe');
-      f.fini.then(() => clearInterval(tic));
+      const fin = auto ? setTimeout(() => f.fermer('auto'), auto * 1000) : 0;
+      f.fini.then(() => { clearInterval(tic); clearTimeout(fin); });
       return f.fini;
     },
 
