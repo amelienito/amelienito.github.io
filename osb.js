@@ -14,15 +14,15 @@
   if (window.OSB) return;
   const RACINE = 'https://amelienito.github.io';
   const JEUX = [
-    { id: 'fun-facts', nom: 'Fun facts', url: '/fun-facts/', img: '/fun-facts/apercu-lien.jpg', genre: 'Des faits vérifiés, sources comprises',
+    { id: 'fun-facts', nom: 'Fun facts', url: '/fun-facts/', img: '/img/jeux/fun-facts.jpg', genre: 'Des faits vérifiés, sources comprises',
       pubs: ['Coupez la parole en soirée, mais avec des sources.', 'Marre de dire « il paraît que » ? Nous aussi.'] },
-    { id: 'osmose', nom: 'Osmose', url: '/osmose/', img: '/osmose/assets/apercu.jpg', genre: 'Le quizz rap du soir',
+    { id: 'osmose', nom: 'Osmose', url: '/osmose/', img: '/img/jeux/osmose.jpg', genre: 'Le quizz rap du soir',
       pubs: ['Vous connaissez le rap. Enfin, c’est ce que vous dites.', 'Le quizz rap où même les lucioles font semblant.'] },
-    { id: 'cite-3-chinois', nom: 'Cite 3 Chinois', url: '/cite-trois-chinois/', img: '/cite-trois-chinois/apercu-lien.jpg', genre: '197 pays, trois célébrités vivantes chacun',
+    { id: 'cite-3-chinois', nom: 'Cite 3 Chinois', url: '/cite-trois-chinois/', img: '/img/jeux/cite-3-chinois.jpg', genre: '197 pays, trois célébrités vivantes chacun',
       pubs: ['Citez trois Chinois vivants. Non, lui, il est mort.', '197 pays. Vous séchez dès le troisième, c’est normal.'] },
-    { id: 'rp-talya', nom: 'RP Talya', url: '/Hb/', img: '/Hb/apercu-lien.jpg', genre: 'Sept missions, une chienne aux commandes',
+    { id: 'rp-talya', nom: 'RP Talya', url: '/Hb/', img: '/img/jeux/rp-talya.jpg', genre: 'Sept missions, une chienne aux commandes',
       pubs: ['Un jeu où le chien décide de tout. Comme chez vous.', 'Elle a mangé le câble. Elle n’a aucun regret.'] },
-    { id: 'music-discovery', nom: 'Music Discovery', url: '/music-discovery/', img: '/music-discovery/img/apercu-lien.jpg', genre: 'Une chaîne hi-fi, une sélection triée à la main',
+    { id: 'music-discovery', nom: 'Music Discovery', url: '/music-discovery/', img: '/img/jeux/music-discovery.jpg', genre: 'Une chaîne hi-fi, une sélection triée à la main',
       pubs: ['De la musique choisie par un humain. Oui, ça existe encore.', 'Aucun algorithme n’a été consulté pendant le tri.'] },
   ];
   // où partent les retours : le formulaire Google d'Amélien (deux champs de texte)
@@ -85,12 +85,15 @@ textarea.osb-champ{min-height:120px;resize:vertical}
 .osb-pied-retour{display:inline-block;padding:10px 4px;background:none;border:0;color:inherit;font:inherit;font-size:14.5px;line-height:1.4;opacity:.8;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,currentColor 45%,transparent);transition:opacity .2s}
 .osb-pied-retour:hover{opacity:1}
 .osb-pied-t{margin:18px 0 10px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;opacity:.55}
-.osb-pied-jeux{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-@media (min-width:560px){.osb-pied-jeux{grid-template-columns:repeat(4,1fr)}}
-.osb-carte{position:relative;display:block;border-radius:12px;overflow:hidden;text-decoration:none;color:#fff;background:#111 center/cover no-repeat;aspect-ratio:1200/630;box-shadow:0 0 0 1px rgba(255,255,255,.14);transition:transform .2s,box-shadow .2s}
+.osb-pied-jeux{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:600px){.osb-pied-jeux{grid-template-columns:repeat(2,1fr);gap:16px}}
+.osb-carte{position:relative;display:block;border-radius:14px;overflow:hidden;text-decoration:none;color:#fff;background:#111;aspect-ratio:16/10;box-shadow:0 0 0 1px rgba(255,255,255,.14);transition:transform .2s,box-shadow .2s}
+.osb-carte i{position:absolute;inset:0;background:center/cover no-repeat;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.osb-carte:hover i{transform:scale(1.035)}
 .osb-carte:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,255,255,.4),0 10px 24px rgba(0,0,0,.4)}
-.osb-carte span{position:absolute;left:0;right:0;bottom:0;padding:16px 8px 6px;font:700 12.5px/1.15 "Inter Tight","Helvetica Neue",Arial,sans-serif;text-align:left;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.85))}
-.osb-carte em{position:absolute;top:6px;left:6px;padding:3px 6px;border-radius:999px;background:#e3b04b;color:#17130c;font:700 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;font-style:normal}
+.osb-carte span{position:absolute;left:0;right:0;bottom:0;padding:38px 14px 12px;font:500 13px/1.3 "Inter Tight","Helvetica Neue",Arial,sans-serif;text-align:left;color:rgba(255,255,255,.82);background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.88))}
+.osb-carte b{display:block;margin-bottom:2px;font-size:18px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.osb-carte em{position:absolute;top:10px;left:10px;z-index:1;padding:3px 6px;border-radius:999px;background:#e3b04b;color:#17130c;font:700 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;font-style:normal}
 @media (prefers-reduced-motion:reduce){.osb-voile,.osb-poste{transition:none}.osb-rouge,.osb-ecran i{animation:none}}
 `;
     document.head.appendChild(s);
@@ -191,8 +194,8 @@ textarea.osb-champ{min-height:120px;resize:vertical}
       if (!el) return null; style();
       const v = OSB.vus(), d = document.createElement('div'); d.className = 'osb-pied';
       d.innerHTML = '<button class="osb-pied-retour" type="button">Un retour ? Un commentaire ? Un bug à partager ?</button>' +
-        (jeux ? '<div class="osb-pied-t">' + h(titre) + '</div><div class="osb-pied-jeux">' + OSB.autres(ici).map((j) =>
-          '<a class="osb-carte" href="' + lien(j, ici) + '" style="background-image:url(' + RACINE + j.img + ')">' + (v[j.id] ? '' : '<em>pas encore vu</em>') + '<span>' + h(j.nom) + '</span></a>').join('') + '</div>' : '');
+        (jeux ? '<div class="osb-pied-t">' + h(titre) + '</div><div class="osb-pied-jeux">' + OSB.autres(ici).sort((a, b) => a.nom.localeCompare(b.nom, 'fr')).map((j) =>
+          '<a class="osb-carte" href="' + lien(j, ici) + '"><i style="background-image:url(' + RACINE + j.img + ')"></i>' + (v[j.id] ? '' : '<em>pas encore vu</em>') + '<span><b>' + h(j.nom) + '</b>' + h(j.genre) + '</span></a>').join('') + '</div>' : '');
       d.querySelector('.osb-pied-retour').onclick = () => OSB.retour({ ici, contexte });
       el.appendChild(d); return d;
     },
