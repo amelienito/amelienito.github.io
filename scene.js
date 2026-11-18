@@ -126,20 +126,23 @@ export function demarrer({ toile, etapes, surEtape, reduit, decors = {}, surDeco
   }
   tableau('img/murs/chief-keef.jpg', 1.0, .749, 2.3, 1.72, -4.18, 0, { cadre: '#b08a3e', bord: .07, epais: .06, dore: true, marge: .06 });   // Chief Keef au jardin d'Éden, au-dessus de la chaîne CD
   tableau('img/murs/koi.jpg', .72, .72, -2.6, 1.78, -4.18, 0, { cadre: '#5a3820', bord: .05 });                                     // la carpe géante, au-dessus du bureau
-  // au-dessus du globe : un rouleau suspendu, le chiffre trois (三) tracé au pinceau — le « 3 » de Cite 3 Chinois
+  /* au-dessus du globe : une mappemonde ancienne, encadrée — le coin géographie d'une vraie chambre.
+     Elle est accrochée au-dessus du tabouret (le globe ne la cache pas) ; trois punaises rouges sur la Chine, le clin d'œil à Cite 3 Chinois. */
   {
-    const L = .5, Ht = .98, g = new THREE.Group(); g.position.set(-4.99, 2.07, -1.0); g.rotation.y = Math.PI / 2; scene.add(g);
-    const tex = toileTexte(400, 784, dessinerRouleau);
-    const papier = new THREE.Mesh(new THREE.PlaneGeometry(L, Ht), Mat({ color: '#ffffff', map: tex, emissiveMap: tex, emissive: '#ffffff', emissiveIntensity: .4 }));
-    papier.position.z = .014; papier.receiveShadow = true; papier.userData.garder = true; g.add(papier);
-    const bois = M('#2a1a12', { flatShading: false }), fil = M('#8a2a22', { flatShading: false });
-    const baguette = (r, long, y, z) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(r, r, long, 12), bois); b.rotation.z = Math.PI / 2; b.position.set(0, y, z); b.castShadow = true; g.add(b); };
-    baguette(.011, L + .016, Ht / 2, .016); baguette(.021, L + .075, -Ht / 2, .024);
-    // le cordon rouge, en triangle jusqu'au clou
-    [-1, 1].forEach(c => { const d = new THREE.Mesh(new THREE.BoxGeometry(.006, .2, .004), fil); d.position.set(c * L * .21, Ht / 2 + .085, .012); d.rotation.z = c * 1.0; g.add(d); });
-    boite(.016, .016, .02, bois, 0, Ht / 2 + .14, .01, g);
+    const L = 1.3, Hm = L * 560 / 1024, g = new THREE.Group(); g.position.set(-4.99, 1.9, -1.0); g.rotation.y = Math.PI / 2; scene.add(g);
+    const tex = toileTexte(1024, 560, dessinerCarte);
+    const papier = new THREE.Mesh(new THREE.PlaneGeometry(L, Hm), Mat({ color: '#ffffff', map: tex, emissiveMap: tex, emissive: '#ffffff', emissiveIntensity: .34 }));
+    papier.position.z = .02; papier.receiveShadow = true; papier.userData.garder = true; g.add(papier);
+    const bois = M('#3a271a', { roughness: .6, flatShading: false }), b = .032, e = .04;
+    [[L + 2 * b, b, 0, (Hm + b) / 2], [L + 2 * b, b, 0, -(Hm + b) / 2], [b, Hm, -(L + b) / 2, 0], [b, Hm, (L + b) / 2, 0]].forEach(([w, h, px, py]) => { boite(w, h, e, bois, px, py, e / 2, g).castShadow = true; });
+    // les punaises : Pékin, Chengdu, Canton
+    const tete = M('#c8231c', { flatShading: false });
+    [[39.9, 116.4], [30.7, 104.1], [23.1, 113.3]].forEach(([lat, lon]) => {
+      const px = ((32 + (lon + 180) / 360 * 960) / 1024 - .5) * L, py = (.5 - (40 + (90 - lat) / 180 * 480) / 560) * Hm;
+      const p = new THREE.Mesh(new THREE.SphereGeometry(.0105, 10, 8), tete); p.position.set(px, py, .032); p.castShadow = true; g.add(p);
+    });
   }
-  tableau('img/murs/evil-dead-2.jpg', .58, .899, 4.99, 1.86, -1.2, -Math.PI / 2, { cadre: '#b8282e', bord: .035, marge: .045, lum: .75 });   // Evil Dead 2, au-dessus du pupitre de quiz
+  tableau('img/murs/evil-dead-2.jpg', .66, 1.023, 4.99, 1.6, .75, -Math.PI / 2, { cadre: '#141312', bord: .024, epais: .03, marge: 0, lum: .6 });   // Evil Dead 2 : l'affiche du film, à sa vraie taille (68 × 102 cm), sous un cadre fin, dans le coin télé
 
   meubler(scene, { M, boite });
   tableau('img/murs/seta.jpg', .76, .76, 4.99, 1.98, 2.85, -Math.PI / 2, { cadre: '#b07a48', bord: .05 });   // Seta, au-dessus de la télé
@@ -850,41 +853,46 @@ function toileTexte(w, h, dessin) {
 }
 /* Le rouleau au-dessus du globe : 三, « trois », en trois traits de pinceau sur papier, monté sur soie bleu nuit,
    avec un sceau rouge. Tout est dessiné ici : pas d'image à télécharger. */
-function dessinerRouleau(x, W, H) {
-  let graine = 7; const alea = () => { graine = (graine * 16807) % 2147483647; return graine / 2147483647; };
-  // la soie de montage, puis le papier
-  x.fillStyle = '#26314a'; x.fillRect(0, 0, W, H);
-  for (let i = 0; i < 90; i++) { x.fillStyle = 'rgba(255,255,255,' + (.012 + alea() * .02) + ')'; x.fillRect(0, alea() * H, W, 1); }
-  const px = 30, py = 74, pw = W - 60, ph = H - 74 - 96;
-  const fond = x.createLinearGradient(0, py, 0, py + ph); fond.addColorStop(0, '#f1e8d3'); fond.addColorStop(1, '#e7dcc1');
-  x.fillStyle = fond; x.fillRect(px, py, pw, ph);
-  for (let i = 0; i < 520; i++) { x.fillStyle = 'rgba(90,70,40,' + (.02 + alea() * .05) + ')'; x.fillRect(px + alea() * pw, py + alea() * ph, 1 + alea() * 2, 1); }
-  x.strokeStyle = 'rgba(201,168,92,.75)'; x.lineWidth = 2; x.strokeRect(px - 5, py - 5, pw + 10, ph + 10);
-  // un trait de pinceau : on appuie à l'entrée, on allège au milieu, on écrase à la sortie ; il monte un peu vers la droite
-  const trait = (cx, cy, demi, ep) => {
-    const monte = demi * .11, N = 60, haut = [], bas = [];
-    for (let i = 0; i <= N; i++) {
-      const t = i / N, X = cx - demi + 2 * demi * t, Y = cy + monte - 2 * monte * t - Math.sin(t * Math.PI) * ep * .1;
-      const e = ep / 2 * (.7 + .3 * Math.pow(Math.abs(2 * t - 1), 1.6)) * Math.min(1, Math.sqrt(t / .08)) * Math.min(1, Math.sqrt((1 - t) / .05));
-      const sortie = Math.max(0, (t - .74) / .26), entree = Math.max(0, 1 - t / .16);
-      haut.push([X, Y - e * (1 + entree * .3 - sortie * .1)]); bas.push([X, Y + e * (1 + sortie * .6 + entree * .05)]);
-    }
-    x.save(); x.fillStyle = '#16130f'; x.shadowColor = 'rgba(22,19,15,.55)'; x.shadowBlur = 4;
-    x.beginPath(); x.moveTo(haut[0][0], haut[0][1]); haut.forEach(p => x.lineTo(p[0], p[1])); bas.reverse().forEach(p => x.lineTo(p[0], p[1])); x.closePath(); x.fill();
-    x.restore();
-    // le pinceau qui s'assèche : des filets de papier dans l'encre
-    x.save(); x.strokeStyle = 'rgba(236,226,204,.5)'; x.lineCap = 'round';
-    for (let k = 0; k < 16; k++) { const t0 = .32 + alea() * .4, l = .1 + alea() * .22, dy = (alea() - .5) * ep * .5;
-      x.lineWidth = .6 + alea() * 1.4; x.beginPath(); x.moveTo(cx - demi + 2 * demi * t0, cy + monte - 2 * monte * t0 + dy); x.lineTo(cx - demi + 2 * demi * (t0 + l), cy + monte - 2 * monte * (t0 + l) + dy - 1); x.stroke(); }
-    x.restore();
-  };
-  trait(W / 2 - 4, 248, 86, 46); trait(W / 2 + 2, 392, 62, 40); trait(W / 2, 550, 124, 54);
-  // le sceau
-  x.save(); x.translate(px + 44, py + ph - 58); x.rotate(-.05); x.fillStyle = '#b3261e'; arrondi(x, -22, -22, 44, 44, 5); x.fill();
-  x.strokeStyle = 'rgba(241,232,211,.9)'; x.lineWidth = 1.5; x.strokeRect(-17, -17, 34, 34);
-  x.fillStyle = '#f1e8d3'; x.font = '800 13px "Inter Tight", Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('OSB', 0, 1); x.restore();
+function dessinerCarte(x, W, H) {
+  // le papier, un peu jauni, plus sombre sur les bords
+  const fond = x.createRadialGradient(W / 2, H / 2, H * .2, W / 2, H / 2, W * .62); fond.addColorStop(0, '#efe4c6'); fond.addColorStop(1, '#d9c69c');
+  x.fillStyle = fond; x.fillRect(0, 0, W, H);
+  // les terres : un masque de 180 × 90 cases, agrandi en douceur, puis tranché net (des côtes lisses, pas des marches d'escalier)
+  const MX = 32, MY = 40, MW = 960, MH = 480;
+  const petit = document.createElement('canvas'); petit.width = 180; petit.height = 90;
+  const p = petit.getContext('2d'), im = p.createImageData(180, 90);
+  for (let j = 0; j < 90; j++) for (let i = 0; i < 180; i++) { const lat = 89 - 2 * j, lon = -179 + 2 * i, k = (j * 180 + i) * 4, v = terre(lat, lon) ? 255 : 0, ch = chine(lat, lon) ? 255 : 0; im.data[k] = v; im.data[k + 1] = ch; im.data[k + 3] = 255; }
+  p.putImageData(im, 0, 0);
+  const grand = document.createElement('canvas'); grand.width = MW; grand.height = MH;
+  const gg = grand.getContext('2d'); gg.imageSmoothingEnabled = true; gg.imageSmoothingQuality = 'high'; gg.filter = 'blur(3px)'; gg.drawImage(petit, 0, 0, MW, MH);
+  const m = gg.getImageData(0, 0, MW, MH), out = x.getImageData(MX, MY, MW, MH), d = out.data, rnd = graine(7);
+  for (let k = 0; k < MW * MH; k++) {
+    const v = m.data[k * 4], ch = m.data[k * 4 + 1], q = k * 4, n = (rnd() - .5) * 10;
+    let r, gC, bC;
+    if (v < 118) { r = 176; gC = 196; bC = 186; }                       // la mer : un lavis bleu-vert passé
+    else if (v < 140) { r = 92; gC = 70; bC = 48; }                      // la côte : un trait d'encre brune
+    else if (ch > 128) { r = 200; gC = 120; bC = 92; }                   // la Chine, rosée
+    else { r = 214; gC = 186; bC = 128; }                                // la terre, ocre
+    d[q] = r + n; d[q + 1] = gC + n; d[q + 2] = bC + n; d[q + 3] = 255;
+  }
+  x.putImageData(out, MX, MY);
+  // les méridiens et les parallèles, à l'encre légère ; l'équateur un peu plus marqué
+  x.strokeStyle = 'rgba(92,70,48,.22)'; x.lineWidth = 1;
+  for (let lon = -150; lon <= 150; lon += 30) { const X = MX + (lon + 180) / 360 * MW; x.beginPath(); x.moveTo(X, MY); x.lineTo(X, MY + MH); x.stroke(); }
+  for (let lat = -60; lat <= 60; lat += 30) { const Y = MY + (90 - lat) / 180 * MH; x.lineWidth = lat === 0 ? 2 : 1; x.beginPath(); x.moveTo(MX, Y); x.lineTo(MX + MW, Y); x.stroke(); }
+  // le double filet autour de la carte
+  x.strokeStyle = 'rgba(70,50,32,.8)'; x.lineWidth = 3; x.strokeRect(MX - 6, MY - 6, MW + 12, MH + 12);
+  x.lineWidth = 1; x.strokeRect(MX - 12, MY - 12, MW + 24, MH + 24);
+  // une rose des vents, dans le Pacifique sud
+  const cx = MX + MW * .12, cy = MY + MH * .74, R = 34;
+  x.fillStyle = 'rgba(70,50,32,.75)';
+  for (let a = 0; a < 8; a++) { const ang = a * Math.PI / 4, l = a % 2 ? R * .55 : R; x.beginPath(); x.moveTo(cx + Math.cos(ang) * l, cy + Math.sin(ang) * l); x.lineTo(cx + Math.cos(ang + Math.PI / 2) * 5, cy + Math.sin(ang + Math.PI / 2) * 5); x.lineTo(cx + Math.cos(ang - Math.PI / 2) * 5, cy + Math.sin(ang - Math.PI / 2) * 5); x.fill(); }
+  x.beginPath(); x.arc(cx, cy, 4, 0, 7); x.fillStyle = '#efe4c6'; x.fill();
+  x.font = '600 15px Georgia, serif'; x.fillStyle = 'rgba(70,50,32,.85)'; x.textAlign = 'center'; x.fillText('N', cx, cy - R - 6);
+  // le titre, en petites capitales, dans la marge du bas
+  x.font = '600 17px Georgia, serif'; x.fillText('M A P P E M O N D E', W / 2, H - 9);
 }
-// un rectangle aux coins arrondis
+
 function arrondi(x, X, Y, W, H, r) {
   x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + W, Y, X + W, Y + H, r); x.arcTo(X + W, Y + H, X, Y + H, r); x.arcTo(X, Y + H, X, Y, r); x.arcTo(X, Y, X + W, Y, r); x.closePath();
 }
@@ -921,6 +929,14 @@ function texteCiel() {
     for (let i = 0; i < 9; i++) { const bw = 18 + r() * 24, bh = 14 + r() * 40; x.fillRect(i * 29, h * .8 - bh, bw, bh); x.fillStyle = '#e8c56a'; if (r() < .6) x.fillRect(i * 29 + 5, h * .8 - bh + 6, 3, 4); x.fillStyle = '#0a0f1e'; }
   });
 }
+
+/* ═══ la carte du monde, par cases de 2° (tirée des contours des pays de Cite 3 Chinois) : le globe et la mappemonde du mur ═══ */
+// la carte : terre ou mer, par cases de 2°, tirée des contours des pays de Cite 3 Chinois
+const carte = atob('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8Af/gAAAAAAAAAAAAAAAAAAAAAAA//////+AAAAAAAADgAAAAAAAAAAAAI/+f///4AB/AAAAAB8AAAAAAAAAABwAj4f///wAAYAAAAAAPAAAAAAAAAAAHmvwAf//wAAAAADgAf/4AHAAAAAAAD4238AP//gAAAAAOBD///8DAAAgBgACfx3/gP//gAAA4AMHf//////gAAf////79jwH/+AAAP/gA//////////8P//////h+H/gAAAf/6///////////M///////n8D8A+AB+/v///////////AP/////4g8D4AAAH9/////////////Af/////gHgB4AAAP5///////////P4AHgP///gH0AAAAAH4/////////+GMAADQB///8H+AAAAGCx/////////8A8AAIAA////v/gAAAPDj/////////wA4AAAAAf///v/wAAAbv///////////AwAAAAAP/////wAAAH////////////AAAAAAAH////8YAAAB///////////9AAAAAAAD//9/8MAAAB///////////9AAAAAAAD///f/AAAAB//7/f//////5AAAAAAAD//9/gAAAAfxvwPP//////jAAAAAAAD////AAAAAfi///n/////+CAAAAAAAD///+AAAAAfCLf/n////+MCAAAAAAAB///8AAAAAOGRP/3/////mOAAAAAAAB///8AAAAAH/AA///////E8AAAAAAAAf//wAAAAAf/AB///////hgAAAAAAAAP//wAAAAAf/7////////gAAAAAAAAAP/gwAAAAA/////f/////gAAAAAAAAAF+AQAAAAB///+/v/////AAAAAAAAAAC+AAAAAAD/////0n////gAAAAAAAAAAeAwAAAAD////f/D///8gAAAAAAAAAAfEOAAAAH////v/B/z/wAAAAAAAAAAAPMBwAAAD////v+A/B+gAAAAAAAAAAAH8AAAAAD////38AeB/AgAAAAAAAAAAAPAAAAAH////3wAcAfggAAAAAAAAAAADAAAAAD////+AAcAfgwAAAAAAAAAAABDwAAAD////9wAMATAYAAAAAAAAAAAA//AAAB/////gAOASAYAAAAAAAAAAAAH/gAAA/////gACAICIAAAAAAAAAAAAH/8AAAfP///AAAAsHAAAAAAAAAAAAAH/+AAAAB//+AAAA8OAAAAAAAAAAAAAP/+AAAAB//8AAAAc+oAAAAAAAAAAAAP//gAAAD/94AAAAMeggAAAAAAAAAAAP//+AAAB//wAAAAGdg/AAAAAAAAAAAf///AAAA//wAAAACAwPkAAAAAAAAAAP///gAAA//wAAAABwAHwAAAAAAAAAAP///gAAA//wAAAAAAIDYAAAAAAAAAAH///AAAAf/wAAAAAAAAAAAAAAAAAAAH//+AAAA//wgAAAAABxAAAAAAAAAAAD//+AAAA//xgAAAAAPxgAAAAAAAAAAB//+AAAA//zgAAAAAf/gABAAAAAAAAAf/8AAAA//DgAAAAAf/wAAAAAAAAAAAf/8AAAAf/DAAAAAD//4CAAAAAAAAAAf/4AAAAf/DAAAAAH//8AAAAAAAAAAAf/AAAAAf+DAAAAAH//8AAAAAAAAAAA//AAAAAf8AAAAAAH//+AAAAAAAAAAA/+AAAAAP8AAAAAAH//+AAAAAAAAAAA/+AAAAAH4AAAAAAH//+AAAAAAAAAAA/8AAAAAHwAAAAAAD4f8AAAAAAAAAAA/4AAAAAAAAAAAAADAH8AIAAAAAAAAB/wAAAAAAAAAAAAAAAD4AEAAAAAAAAB+AAAAAAAAAAAAAAAAAAAGAAAAAAAAB+AAAAAAAAAAAAAAAAAwAMAAAAAAAAB8AAAAAAAAAAAAAAAAAQAYAAAAAAAAB4AAAAAAAAAAAAAAAAAABwAAAAAAAAD4AAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAACAAAAAAAAAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////');
+// la Chine, en cases de 2° (de 59°N à 13°N, de 67°E à 141°E), grossie d'une case tout autour pour qu'on la voie bien
+const chineB = atob('AAAAAAAAAAAAAAAAA+AAAAAPwABwAP+AA+AD/4A/wB/+AP/B//gH////wH////4B////4Af///4AD///+AAf///gAH///4AA///+AAD///gAAAf/wAAAH/4AAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAA');
+const chine = (lat, lon) => { const j = Math.round((59 - lat) / 2), i = Math.round((lon - 67) / 2); if (j < 0 || j >= 24 || i < 0 || i >= 38) return 0; const k = j * 38 + i; return (chineB.charCodeAt(k >> 3) >> (7 - (k & 7))) & 1; };
+const terre = (lat, lon) => { const j = Math.min(89, Math.max(0, Math.round((89 - lat) / 2))), i = ((Math.round((lon + 179) / 2) % 180) + 180) % 180, k = j * 180 + i; return (carte.charCodeAt(k >> 3) >> (7 - (k & 7))) & 1; };
 
 const FORMES = {
   // Onsenbranle : le bureau, et dessus le MacBook ; le blog est ouvert, le fond d'écran c'est Sunny (Taiyō Matsumoto)
@@ -1151,12 +1167,6 @@ const FORMES = {
     const support = new THREE.Group(); support.position.y = .8; g.add(support);
     const base = new THREE.Mesh(new THREE.CylinderGeometry(.09, .12, .04, 12), M('#8c6a3c', { metalness: .5, roughness: .4 })); base.position.y = .02; support.add(base);
     const axe = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .16, 6), M('#8c6a3c', { metalness: .5 })); axe.position.y = .1; support.add(axe);
-    // la carte : terre ou mer, par cases de 2°, tirée des contours des pays de Cite 3 Chinois
-    const carte = atob('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf8Af/gAAAAAAAAAAAAAAAAAAAAAAA//////+AAAAAAAADgAAAAAAAAAAAAI/+f///4AB/AAAAAB8AAAAAAAAAABwAj4f///wAAYAAAAAAPAAAAAAAAAAAHmvwAf//wAAAAADgAf/4AHAAAAAAAD4238AP//gAAAAAOBD///8DAAAgBgACfx3/gP//gAAA4AMHf//////gAAf////79jwH/+AAAP/gA//////////8P//////h+H/gAAAf/6///////////M///////n8D8A+AB+/v///////////AP/////4g8D4AAAH9/////////////Af/////gHgB4AAAP5///////////P4AHgP///gH0AAAAAH4/////////+GMAADQB///8H+AAAAGCx/////////8A8AAIAA////v/gAAAPDj/////////wA4AAAAAf///v/wAAAbv///////////AwAAAAAP/////wAAAH////////////AAAAAAAH////8YAAAB///////////9AAAAAAAD//9/8MAAAB///////////9AAAAAAAD///f/AAAAB//7/f//////5AAAAAAAD//9/gAAAAfxvwPP//////jAAAAAAAD////AAAAAfi///n/////+CAAAAAAAD///+AAAAAfCLf/n////+MCAAAAAAAB///8AAAAAOGRP/3/////mOAAAAAAAB///8AAAAAH/AA///////E8AAAAAAAAf//wAAAAAf/AB///////hgAAAAAAAAP//wAAAAAf/7////////gAAAAAAAAAP/gwAAAAA/////f/////gAAAAAAAAAF+AQAAAAB///+/v/////AAAAAAAAAAC+AAAAAAD/////0n////gAAAAAAAAAAeAwAAAAD////f/D///8gAAAAAAAAAAfEOAAAAH////v/B/z/wAAAAAAAAAAAPMBwAAAD////v+A/B+gAAAAAAAAAAAH8AAAAAD////38AeB/AgAAAAAAAAAAAPAAAAAH////3wAcAfggAAAAAAAAAAADAAAAAD////+AAcAfgwAAAAAAAAAAABDwAAAD////9wAMATAYAAAAAAAAAAAA//AAAB/////gAOASAYAAAAAAAAAAAAH/gAAA/////gACAICIAAAAAAAAAAAAH/8AAAfP///AAAAsHAAAAAAAAAAAAAH/+AAAAB//+AAAA8OAAAAAAAAAAAAAP/+AAAAB//8AAAAc+oAAAAAAAAAAAAP//gAAAD/94AAAAMeggAAAAAAAAAAAP//+AAAB//wAAAAGdg/AAAAAAAAAAAf///AAAA//wAAAACAwPkAAAAAAAAAAP///gAAA//wAAAABwAHwAAAAAAAAAAP///gAAA//wAAAAAAIDYAAAAAAAAAAH///AAAAf/wAAAAAAAAAAAAAAAAAAAH//+AAAA//wgAAAAABxAAAAAAAAAAAD//+AAAA//xgAAAAAPxgAAAAAAAAAAB//+AAAA//zgAAAAAf/gABAAAAAAAAAf/8AAAA//DgAAAAAf/wAAAAAAAAAAAf/8AAAAf/DAAAAAD//4CAAAAAAAAAAf/4AAAAf/DAAAAAH//8AAAAAAAAAAAf/AAAAAf+DAAAAAH//8AAAAAAAAAAA//AAAAAf8AAAAAAH//+AAAAAAAAAAA/+AAAAAP8AAAAAAH//+AAAAAAAAAAA/+AAAAAH4AAAAAAH//+AAAAAAAAAAA/8AAAAAHwAAAAAAD4f8AAAAAAAAAAA/4AAAAAAAAAAAAADAH8AIAAAAAAAAB/wAAAAAAAAAAAAAAAD4AEAAAAAAAAB+AAAAAAAAAAAAAAAAAAAGAAAAAAAAB+AAAAAAAAAAAAAAAAAwAMAAAAAAAAB8AAAAAAAAAAAAAAAAAQAYAAAAAAAAB4AAAAAAAAAAAAAAAAAABwAAAAAAAAD4AAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAACAAAAAAAAAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////');
-    // la Chine, en cases de 2° (de 59°N à 13°N, de 67°E à 141°E), grossie d'une case tout autour pour qu'on la voie bien
-    const chineB = atob('AAAAAAAAAAAAAAAAA+AAAAAPwABwAP+AA+AD/4A/wB/+AP/B//gH////wH////4B////4Af///4AD///+AAf///gAH///4AA///+AAD///gAAAf/wAAAH/4AAAA/8AAAAAAAAAAAAAAAAAAAAAAAAAAA');
-    const chine = (lat, lon) => { const j = Math.round((59 - lat) / 2), i = Math.round((lon - 67) / 2); if (j < 0 || j >= 24 || i < 0 || i >= 38) return 0; const k = j * 38 + i; return (chineB.charCodeAt(k >> 3) >> (7 - (k & 7))) & 1; };
-    const terre = (lat, lon) => { const j = Math.min(89, Math.max(0, Math.round((89 - lat) / 2))), i = ((Math.round((lon + 179) / 2) % 180) + 180) % 180, k = j * 180 + i; return (carte.charCodeAt(k >> 3) >> (7 - (k & 7))) & 1; };
     const geo = sansIndex(new THREE.IcosahedronGeometry(.26, 14));   // 4 500 facettes : assez pour voir les pays
     const p = geo.attributes.position, coul = [], c = new THREE.Color();
     for (let i = 0; i < p.count; i += 3) {
