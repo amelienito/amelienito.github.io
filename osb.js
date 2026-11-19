@@ -9,22 +9,31 @@
    OSB.pied(element, { ici })        pose en fin de visite la ligne des retours et les autres jeux
 
    Pour ajouter un jeu : une ligne dans JEUX. Pour changer une réclame : la liste « pubs » du jeu.
+   La pub et la fenêtre des retours prennent l'habit du jeu où l'on est (HABITS) : ses couleurs, ses polices.
 */
 (() => {
   if (window.OSB) return;
   const RACINE = 'https://amelienito.github.io';
+  // genre : la légende du jeu dans le hub (la même partout : hub, cartes, réclames). pubs : la phrase de la coupure pub, au hasard.
   const JEUX = [
-    { id: 'fun-facts', nom: 'Fun facts', url: '/fun-facts/', img: '/img/jeux/fun-facts.jpg', genre: 'Des faits vérifiés, sources comprises',
-      pubs: ['Coupez la parole en soirée, mais avec des sources.', 'Marre de dire « il paraît que » ? Nous aussi.'] },
+    { id: 'fun-facts', nom: 'Fun facts', url: '/fun-facts/', img: '/img/jeux/fun-facts.jpg', genre: 'Pour apprendre en s’amusant',
+      pubs: ['Des trucs marrants à ressortir au prochain repas de famille.', 'Pour apprendre en s’amusant. Surtout pour s’amuser.'] },
     { id: 'osmose', nom: 'Osmose', url: '/osmose/', img: '/img/jeux/osmose.jpg', genre: 'Le quizz rap du soir',
-      pubs: ['Vous connaissez le rap. Enfin, c’est ce que vous dites.', 'Le quizz rap où même les lucioles font semblant.'] },
-    { id: 'cite-3-chinois', nom: 'Cite 3 Chinois', url: '/cite-trois-chinois/', img: '/img/jeux/cite-3-chinois.jpg', genre: '197 pays, trois célébrités vivantes chacun',
-      pubs: ['Citez trois Chinois vivants. Non, lui, il est mort.', '197 pays. Vous séchez dès le troisième, c’est normal.'] },
-    { id: 'rp-talya', nom: 'RP Talya', url: '/Hb/', img: '/img/jeux/rp-talya.jpg', genre: 'Sept missions, une chienne aux commandes',
-      pubs: ['Un jeu où le chien décide de tout. Comme chez vous.', 'Elle a mangé le câble. Elle n’a aucun regret.'] },
-    { id: 'music-discovery', nom: 'Music Discovery', url: '/music-discovery/', img: '/img/jeux/music-discovery.jpg', genre: 'Une chaîne hi-fi, une sélection triée à la main',
-      pubs: ['De la musique choisie par un humain. Oui, ça existe encore.', 'Aucun algorithme n’a été consulté pendant le tri.'] },
+      pubs: ['Le quizz rap du soir. Les lucioles jouent avec vous.', 'Quinze questions de rap, et une seule à la fin : où tu te places.'] },
+    { id: 'cite-3-chinois', nom: 'Cite 3 Chinois', url: '/cite-trois-chinois/', img: '/img/jeux/cite-3-chinois.jpg', genre: 'Voyons voir si t’es raciste',
+      pubs: ['En seriez-vous capable ?'] },
+    { id: 'rp-talya', nom: 'RP Talya', url: '/Hb/', img: '/img/jeux/rp-talya.jpg', genre: 'Joyeux anniversaire Flo',
+      pubs: ['Sept missions, une chienne aux commandes.'] },
+    { id: 'music-discovery', nom: 'Music Discovery', url: '/music-discovery/', img: '/img/jeux/music-discovery.jpg', genre: 'Découvrir de la musique sainement',
+      pubs: ['J’ai passé ma vie à écouter de la musique. Fallait bien que je trouve un moyen de vous la repartager.'] },
   ];
+  // l'habit de la pub (et de la fenêtre des retours) : celui du jeu où l'on est, avec ses couleurs et ses polices (déjà chargées par la page)
+  const HABITS = {
+    osmose: '--o-voile:rgba(7,6,26,.84);--o-fond:#100e33;--o-bord:rgba(190,196,255,.3);--o-cadre:rgba(7,6,26,.9);--o-encre:#EEF0FF;--o-fort:#fff;--o-doux:#CDD0F4;--o-pale:#9396C9;--o-accent:#EEF0FF;--o-sur-accent:#07061A;--o-marque:#7CF7DD;--o-rouge:#FF6F8E;--o-titre:"Bodoni Moda",Didot,Georgia,serif;--o-titre-style:italic;--o-titre-poids:800;--o-texte:"Mona Sans","Helvetica Neue",Arial,sans-serif;--o-mono:"Mona Sans","Helvetica Neue",Arial,sans-serif;--o-rayon:28px;--o-champ:#0a0924;--o-tv:0',
+    'fun-facts': '--o-voile:rgba(21,19,26,.8);--o-fond:var(--creme,#fbf5e9);--o-bord:rgba(21,19,26,.16);--o-cadre:var(--nuit,#15131a);--o-encre:var(--nuit,#15131a);--o-fort:var(--nuit,#15131a);--o-doux:rgba(21,19,26,.8);--o-pale:rgba(21,19,26,.56);--o-accent:var(--or,#ffc93c);--o-sur-accent:var(--nuit,#15131a);--o-marque:var(--or-fonce,#b8860b);--o-titre:var(--titre,"Unbounded",sans-serif);--o-titre-style:var(--titre-style,normal);--o-titre-poids:var(--titre-graisse,700);--o-texte:var(--corps,"Hanken",sans-serif);--o-mono:var(--corps,"Hanken",sans-serif);--o-rayon:22px;--o-champ:#fff;--o-tv:0',
+    'music-discovery': '--o-voile:rgba(10,10,12,.62);--o-fond:var(--fond,#e7e1d7);--o-bord:var(--trait,rgba(23,23,26,.11));--o-cadre:color-mix(in srgb,var(--encre,#17171a) 14%,transparent);--o-encre:var(--encre,#17171a);--o-fort:var(--encre,#17171a);--o-doux:color-mix(in srgb,var(--encre,#17171a) 82%,transparent);--o-pale:color-mix(in srgb,var(--encre,#17171a) 56%,transparent);--o-accent:var(--aiguille,#1f3fd1);--o-sur-accent:var(--sur-aiguille,#fff);--o-marque:var(--aiguille,#1f3fd1);--o-titre:var(--display,"Archivo",sans-serif);--o-titre-poids:var(--display-poids,700);--o-texte:var(--texte,"Archivo",sans-serif);--o-mono:var(--etiquette,"Archivo",sans-serif);--o-rayon:var(--rayon-objet,14px);--o-rayon-b:var(--rayon-bouton,10px);--o-champ:color-mix(in srgb,var(--fond,#e7e1d7) 88%,var(--encre,#17171a))',
+  };
+  const habiller = (el, ici) => { const t = HABITS[ici || OSB.site]; if (t) el.setAttribute('style', t); return el; };
   // où partent les retours : le formulaire Google d'Amélien (deux champs de texte)
   const FORMULAIRE = { url: 'https://docs.google.com/forms/d/e/1FAIpQLSfKjnU_wrJef9Te-k_OjN2zwCL8aruHIswffb-_x8M8_XpY9g/formResponse', message: 'entry.665975020', lieu: 'entry.1465653503' };
 
@@ -40,51 +49,55 @@
     if (document.getElementById('osb-style')) return;
     const s = document.createElement('style'); s.id = 'osb-style';
     s.textContent = `
-.osb-voile{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;background:rgba(6,5,4,.82);opacity:0;transition:opacity .28s ease;font-family:"Inter Tight","Helvetica Neue",Arial,sans-serif;color:#efe6d2;-webkit-font-smoothing:antialiased}
+.osb-voile,.osb-mot,.osb-pied{--o-voile:rgba(6,5,4,.82);--o-fond:#12100d;--o-bord:#3a3226;--o-cadre:#0a0907;--o-encre:#efe6d2;--o-fort:#fff;--o-doux:#d9cfba;--o-pale:#8d826e;--o-accent:#e3b04b;--o-sur-accent:#17130c;--o-marque:#e3b04b;--o-rouge:#ff4a3d;--o-titre:"Inter Tight","Helvetica Neue",Arial,sans-serif;--o-titre-style:normal;--o-titre-poids:800;--o-texte:"Inter Tight","Helvetica Neue",Arial,sans-serif;--o-mono:ui-monospace,"IBM Plex Mono",Menlo,monospace;--o-rayon:14px;--o-rayon-b:999px;--o-champ:#0a0907;--o-tv:1}
+.osb-voile{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:16px;background:var(--o-voile);opacity:0;transition:opacity .28s ease;font-family:var(--o-texte);color:var(--o-encre);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .osb-voile.osb-on{opacity:1}
 .osb-voile *{box-sizing:border-box}
-.osb-poste{position:relative;width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:#12100d;border:1px solid #3a3226;border-radius:14px;box-shadow:0 30px 90px rgba(0,0,0,.7),0 0 0 6px #0a0907;transform:scale(.94) translateY(10px);transition:transform .35s cubic-bezier(.2,.9,.25,1.15)}
+.osb-poste{position:relative;width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--o-fond);border:1px solid var(--o-bord);border-radius:var(--o-rayon);box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 0 6px var(--o-cadre);transform:scale(.94) translateY(10px);transition:transform .35s cubic-bezier(.2,.9,.25,1.15)}
 .osb-on .osb-poste{transform:none}
-.osb-bandeau{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #2a241b;font:700 11px/1 ui-monospace,"IBM Plex Mono",Menlo,monospace;letter-spacing:.16em;text-transform:uppercase;color:#a89c85}
-.osb-rouge{width:8px;height:8px;border-radius:50%;background:#ff4a3d;box-shadow:0 0 10px #ff4a3d;animation:osb-clign 1.1s steps(2) infinite}
+.osb-bandeau{display:flex;align-items:center;gap:10px;padding:10px 14px;white-space:nowrap;overflow:hidden;border-bottom:1px solid var(--o-bord);font:700 11px/1 var(--o-mono);font-stretch:118%;letter-spacing:.16em;text-transform:uppercase;color:var(--o-pale)}
+.osb-rouge{width:8px;height:8px;border-radius:50%;background:var(--o-rouge);box-shadow:0 0 10px var(--o-rouge);animation:osb-clign 1.1s steps(2) infinite}
 @keyframes osb-clign{50%{opacity:.25}}
-.osb-bandeau b{color:#efe6d2;font-weight:700}
+.osb-bandeau b{color:var(--o-encre);font-weight:700}
 .osb-bandeau span:last-child{margin-left:auto}
-.osb-ecran{position:relative;display:block;aspect-ratio:1200/630;background:#000 center/cover no-repeat;overflow:hidden}
-.osb-ecran::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(rgba(0,0,0,0) 0 2px,rgba(0,0,0,.16) 2px 3px),radial-gradient(120% 90% at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.5));pointer-events:none}
-.osb-ecran i{position:absolute;left:0;right:0;height:22%;top:-22%;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.07),rgba(255,255,255,0));animation:osb-balai 4.5s linear infinite}
+.osb-ecran{position:relative;display:block;aspect-ratio:16/10;background:#000 center/cover no-repeat;overflow:hidden}
+.osb-ecran::after{content:"";position:absolute;inset:0;opacity:var(--o-tv);background:repeating-linear-gradient(rgba(0,0,0,0) 0 2px,rgba(0,0,0,.16) 2px 3px),radial-gradient(120% 90% at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.5));pointer-events:none}
+.osb-ecran i{position:absolute;left:0;right:0;height:22%;top:-22%;opacity:var(--o-tv);background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.07),rgba(255,255,255,0));animation:osb-balai 4.5s linear infinite}
 @keyframes osb-balai{to{top:100%}}
 .osb-texte{padding:16px 18px 6px}
-.osb-marque{font:700 11px/1 ui-monospace,"IBM Plex Mono",Menlo,monospace;letter-spacing:.16em;text-transform:uppercase;color:#e3b04b}
-.osb-nom{margin:8px 0 6px;font-size:clamp(26px,7vw,34px);font-weight:800;line-height:1;letter-spacing:-.02em;color:#fff}
-.osb-slogan{margin:0;font-size:17px;line-height:1.35;color:#d9cfba;text-wrap:balance}
-.osb-genre{margin:6px 0 0;font-size:13px;color:#8d826e}
+.osb-marque{font:700 11px/1 var(--o-mono);font-stretch:118%;letter-spacing:.16em;text-transform:uppercase;color:var(--o-marque)}
+.osb-nom{margin:8px 0 6px;font-family:var(--o-titre);font-style:var(--o-titre-style);font-weight:var(--o-titre-poids);font-size:clamp(28px,7.4vw,36px);line-height:1;letter-spacing:-.02em;color:var(--o-fort)}
+.osb-slogan{margin:0;font-size:17px;line-height:1.38;color:var(--o-doux);text-wrap:balance}
+.osb-genre{margin:6px 0 0;font-size:13px;color:var(--o-pale)}
 .osb-boutons{display:flex;gap:10px;padding:14px 18px 18px;flex-wrap:wrap}
-.osb-b{flex:1 1 150px;min-height:48px;padding:0 18px;border-radius:999px;border:1px solid #4a4031;background:transparent;color:#efe6d2;font:700 15px/1 inherit;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,background .2s,border-color .2s}
-.osb-b:hover{border-color:#8d826e}
+.osb-b{flex:1 1 150px;min-height:48px;padding:0 18px;border-radius:var(--o-rayon-b);border:1px solid var(--o-bord);background:transparent;color:var(--o-encre);font-family:var(--o-texte);font-weight:700;font-size:15px;line-height:1;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,background .2s,border-color .2s,filter .2s}
+.osb-b:hover{border-color:var(--o-pale)}
 .osb-b:active{transform:scale(.97)}
-.osb-b.osb-or{background:#e3b04b;border-color:#e3b04b;color:#17130c}
-.osb-b.osb-or:hover{background:#f0c264}
+.osb-b.osb-or{background:var(--o-accent);border-color:var(--o-accent);color:var(--o-sur-accent)}
+.osb-b.osb-or:hover{filter:brightness(1.08)}
 .osb-b[disabled]{opacity:.55;cursor:default}
-.osb-mention{padding:0 18px 14px;font-size:11.5px;color:#6f6656;text-align:center}
-.osb-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#efe6d2;font-size:18px;cursor:pointer}
-.osb-titre{margin:0;padding:20px 54px 4px 18px;font-size:22px;font-weight:800;line-height:1.15;letter-spacing:-.01em;color:#fff;text-wrap:balance}
-.osb-sous{margin:0;padding:0 18px 12px;font-size:14px;color:#a89c85;line-height:1.4}
-.osb-champ{display:block;width:calc(100% - 36px);margin:0 18px 10px;padding:12px 14px;border-radius:12px;border:1px solid #3a3226;background:#0a0907;color:#efe6d2;font:500 16px/1.4 inherit;font-family:inherit}
-.osb-champ:focus{outline:2px solid #e3b04b;outline-offset:1px}
+.osb-mention{padding:0 18px 14px;font-size:11.5px;color:var(--o-pale);text-align:center}
+.osb-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;border:0;background:color-mix(in srgb,var(--o-encre) 10%,transparent);color:var(--o-encre);font-size:18px;cursor:pointer}
+.osb-titre{margin:0;padding:20px 54px 4px 18px;font-family:var(--o-titre);font-style:var(--o-titre-style);font-weight:var(--o-titre-poids);font-size:22px;line-height:1.15;letter-spacing:-.01em;color:var(--o-fort);text-wrap:balance}
+.osb-sous{margin:0;padding:0 18px 12px;font-size:14px;color:var(--o-pale);line-height:1.4}
+.osb-champ{display:block;width:calc(100% - 36px);margin:0 18px 10px;padding:12px 14px;border-radius:12px;border:1px solid var(--o-bord);background:var(--o-champ);color:var(--o-encre);font-family:var(--o-texte);font-weight:500;font-size:16px;line-height:1.4}
+.osb-champ:focus{outline:2px solid var(--o-marque);outline-offset:1px}
 textarea.osb-champ{min-height:120px;resize:vertical}
-.osb-mot{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));z-index:2147482000;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 24px);padding:10px 8px 10px 16px;border-radius:999px;background:#12100d;border:1px solid #3a3226;box-shadow:0 12px 34px rgba(0,0,0,.5);color:#efe6d2;font:500 14px/1.2 "Inter Tight","Helvetica Neue",Arial,sans-serif;white-space:nowrap;transform:translate(-50%,24px);opacity:0;transition:transform .4s cubic-bezier(.2,.9,.25,1.15),opacity .3s}
+.osb-mot{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));z-index:2147482000;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 24px);padding:10px 8px 10px 16px;border-radius:999px;background:var(--o-fond);border:1px solid var(--o-bord);box-shadow:0 12px 34px rgba(0,0,0,.4);color:var(--o-encre);font-family:var(--o-texte);font-weight:500;font-size:14px;line-height:1.2;white-space:nowrap;transform:translate(-50%,24px);opacity:0;transition:transform .4s cubic-bezier(.2,.9,.25,1.15),opacity .3s}
 .osb-mot.osb-on{transform:translate(-50%,0);opacity:1}
-.osb-mot b{color:#fff}
-.osb-mot a{color:#e3b04b;font-weight:700;text-underline-offset:3px}
-.osb-mot button{width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:#8d826e;font-size:14px;cursor:pointer}
+.osb-mot b{color:var(--o-fort)}
+.osb-mot a{color:var(--o-marque);font-weight:700;text-underline-offset:3px}
+.osb-mot button{width:30px;height:30px;border-radius:50%;border:0;background:transparent;color:var(--o-pale);font-size:14px;cursor:pointer}
 .osb-merci{padding:30px 18px 34px;text-align:center;font-size:18px;line-height:1.4}
-.osb-merci b{display:block;font-size:26px;margin-bottom:6px;color:#fff}
+.osb-merci b{display:block;font-family:var(--o-titre);font-style:var(--o-titre-style);font-weight:var(--o-titre-poids);font-size:28px;margin-bottom:6px;color:var(--o-fort)}
 .osb-pied{margin:26px auto 0;width:100%;max-width:560px;text-align:center;font-family:inherit}
 .osb-pied *{box-sizing:border-box}
 .osb-pied-retour{display:inline-block;padding:10px 4px;background:none;border:0;color:inherit;font:inherit;font-size:14.5px;line-height:1.4;opacity:.8;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,currentColor 45%,transparent);transition:opacity .2s}
 .osb-pied-retour:hover{opacity:1}
 .osb-pied-t{margin:18px 0 10px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;opacity:.55}
+.osb-pied-liste{margin:0;font-size:15px;line-height:1.7}
+.osb-pied-liste a{color:inherit;font-weight:700;text-underline-offset:4px;text-decoration-thickness:1px}
+.osb-pied-liste span{opacity:.45;margin:0 .45em}
 .osb-pied-jeux{display:grid;grid-template-columns:1fr;gap:14px}
 @media (min-width:600px){.osb-pied-jeux{grid-template-columns:repeat(2,1fr);gap:16px}}
 .osb-carte{position:relative;display:block;border-radius:14px;overflow:hidden;text-decoration:none;color:#fff;background:#111;aspect-ratio:16/10;box-shadow:0 0 0 1px rgba(255,255,255,.14);transition:transform .2s,box-shadow .2s}
@@ -93,7 +106,7 @@ textarea.osb-champ{min-height:120px;resize:vertical}
 .osb-carte:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(255,255,255,.4),0 10px 24px rgba(0,0,0,.4)}
 .osb-carte span{position:absolute;left:0;right:0;bottom:0;padding:38px 14px 12px;font:500 13px/1.3 "Inter Tight","Helvetica Neue",Arial,sans-serif;text-align:left;color:rgba(255,255,255,.82);background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.88))}
 .osb-carte b{display:block;margin-bottom:2px;font-size:18px;font-weight:700;color:#fff;letter-spacing:-.01em}
-.osb-carte em{position:absolute;top:10px;left:10px;z-index:1;padding:3px 6px;border-radius:999px;background:#e3b04b;color:#17130c;font:700 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;font-style:normal}
+.osb-carte em{position:absolute;top:10px;left:10px;z-index:1;padding:3px 6px;border-radius:999px;background:var(--o-accent);color:var(--o-sur-accent);font:700 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;font-style:normal}
 @media (prefers-reduced-motion:reduce){.osb-voile,.osb-poste{transition:none}.osb-rouge,.osb-ecran i{animation:none}}
 `;
     document.head.appendChild(s);
@@ -103,7 +116,7 @@ textarea.osb-champ{min-height:120px;resize:vertical}
   function ouvrir(html, { fermable = true } = {}) {
     style(); if (ouvert) ouvert.fermer();
     const v = document.createElement('div'); v.className = 'osb-voile'; v.setAttribute('role', 'dialog'); v.setAttribute('aria-modal', 'true');
-    v.innerHTML = '<div class="osb-poste">' + html + '</div>';
+    v.innerHTML = '<div class="osb-poste">' + html + '</div>'; habiller(v);
     document.body.appendChild(v);
     const avant = document.activeElement;
     let finir; const fini = new Promise((r) => (finir = r));
@@ -129,7 +142,7 @@ textarea.osb-champ{min-height:120px;resize:vertical}
       return v;
     },
     mot(html, action, url) {
-      style(); const m = document.createElement('div'); m.className = 'osb-mot';
+      style(); const m = habiller(document.createElement('div')); m.className = 'osb-mot';
       m.innerHTML = '<span>' + html + '</span>' + (action ? '<a href="' + url + '">' + h(action) + '</a>' : '') + '<button type="button" aria-label="Fermer">✕</button>';
       document.body.appendChild(m); requestAnimationFrame(() => m.classList.add('osb-on'));
       const partir = () => { m.classList.remove('osb-on'); setTimeout(() => m.remove(), 400); };
@@ -138,10 +151,14 @@ textarea.osb-champ{min-height:120px;resize:vertical}
     vus() { return mem.lire('osb-vus', {}); },
     autres(id) { const v = OSB.vus(); return JEUX.filter((j) => j.id !== (id || OSB.site)).sort((a, b) => (v[a.id] ? 1 : 0) - (v[b.id] ? 1 : 0)); },
 
-    /* la coupure pub. Jamais deux dans la même visite, jamais deux en moins de dix minutes d'un jeu à l'autre (sauf force). */
-    pubPossible() { return !OSB._pubVue && Date.now() - mem.lire('osb-pub-t', 0) > 10 * 60 * 1000; },
+    /* la coupure pub, avec parcimonie : au plus une par jour, tous jeux confondus ; jamais pendant la toute première visite d'un jeu ;
+       et jamais dans une visite où l'on a déjà vu les cartes des autres jeux en bas de page (une réclame à la fois, pas les deux) */
+    pubPossible(ici) {
+      const v = OSB.vus()[ici || OSB.site];
+      return !OSB._pubVue && !OSB._piedVu && !!v && v.n >= 2 && Date.now() - mem.lire('osb-pub-t', 0) > 20 * 3600 * 1000;
+    },
     pub({ ici, force = false, attente = 3, auto = 0 } = {}) {
-      if (!force && !OSB.pubPossible()) return Promise.resolve(null);
+      if (!force && !OSB.pubPossible(ici)) return Promise.resolve(null);
       const choix = OSB.autres(ici); if (!choix.length) return Promise.resolve(null);
       // de préférence un jeu jamais ouvert ; sinon, pas le même que la dernière fois
       const v = OSB.vus(), neufs = choix.filter((j) => !v[j.id]), dernier = mem.lire('osb-pub-j', '');
@@ -189,15 +206,22 @@ textarea.osb-champ{min-height:120px;resize:vertical}
       return f.fini;
     },
 
-    /* en fin de visite : la ligne des retours, puis les autres jeux (jamais ouverts d'abord) */
+    /* en fin de visite : la ligne des retours, puis les autres jeux, en grandes cartes (par ordre alphabétique).
+       Si une coupure pub est déjà passée pendant cette visite, une simple ligne de liens suffit. */
     pied(el, { ici, contexte = '', jeux = true, titre = 'Les autres jeux d’OSB Corporation' } = {}) {
       if (!el) return null; style();
-      const v = OSB.vus(), d = document.createElement('div'); d.className = 'osb-pied';
-      d.innerHTML = '<button class="osb-pied-retour" type="button">Un retour ? Un commentaire ? Un bug à partager ?</button>' +
-        (jeux ? '<div class="osb-pied-t">' + h(titre) + '</div><div class="osb-pied-jeux">' + OSB.autres(ici).sort((a, b) => a.nom.localeCompare(b.nom, 'fr')).map((j) =>
-          '<a class="osb-carte" href="' + lien(j, ici) + '"><i style="background-image:url(' + RACINE + j.img + ')"></i>' + (v[j.id] ? '' : '<em>pas encore vu</em>') + '<span><b>' + h(j.nom) + '</b>' + h(j.genre) + '</span></a>').join('') + '</div>' : '');
+      const v = OSB.vus(), d = habiller(document.createElement('div'), ici); d.className = 'osb-pied';
+      const liste = OSB.autres(ici).sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+      d.innerHTML = '<button class="osb-pied-retour" type="button">Un retour ? Un commentaire ? Un bug à partager ?</button>' + (!jeux ? '' : OSB._pubVue
+        ? '<div class="osb-pied-t">' + h(titre) + '</div><p class="osb-pied-liste">' + liste.map((j) => '<a href="' + lien(j, ici) + '">' + h(j.nom) + '</a>').join('<span>·</span>') + '</p>'
+        : '<div class="osb-pied-t">' + h(titre) + '</div><div class="osb-pied-jeux">' + liste.map((j) =>
+          '<a class="osb-carte" href="' + lien(j, ici) + '"><i style="background-image:url(' + RACINE + j.img + ')"></i>' + (v[j.id] ? '' : '<em>pas encore vu</em>') + '<span><b>' + h(j.nom) + '</b>' + h(j.genre) + '</span></a>').join('') + '</div>');
       d.querySelector('.osb-pied-retour').onclick = () => OSB.retour({ ici, contexte });
-      el.appendChild(d); return d;
+      el.appendChild(d);
+      // les cartes ont été vues (au moins un tiers à l'écran) : pas de coupure pub en plus pendant cette visite
+      const g = d.querySelector('.osb-pied-jeux');
+      if (g && 'IntersectionObserver' in window) { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { OSB._piedVu = true; io.disconnect(); } }, { threshold: .34 }); io.observe(g); }
+      return d;
     },
   };
   window.OSB = OSB;
